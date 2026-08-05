@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The tile behind the launcher artwork: a lit blue dome, white where the light
+  falls and deeper blue at the edges.
+
+  A **radial** gradient rather than a linear one, and that is the whole of the 3D
+  look — a light source above and to the left, with the colour deepening away from
+  it, which is how a rounded surface reads. A linear ramp says "two colours"; this
+  says "a shape".
+
+  A vector rather than a colour so it can hold the gradient at all, and it covers
+  the whole 108dp rather than the 72 that is guaranteed visible: the outer ring is
+  what a launcher's mask and its parallax eat into, and a background stopping short
+  of it shows as a pale edge on some phones and not others.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:pathData="M0,0h108v108h-108z">
+        <aapt:attr xmlns:aapt="http://schemas.android.com/aapt" name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="40"
+                android:centerY="26"
+                android:gradientRadius="96">
+                <!--
+                  The stops are spaced for the middle 72dp a mask actually shows.
+                  Everything past about 0.83 of the way out is bleed: put the
+                  deepest colour at the very edge and the icon reads as white with
+                  a hint of blue, because the blue is in the part no launcher draws.
+                -->
+                <item android:offset="0" android:color="#FFFFFFFF" />
+                <item android:offset="0.30" android:color="#FFF2FAFF" />
+                <item android:offset="0.58" android:color="#FFBFE4F8" />
+                <item android:offset="0.80" android:color="#FF7FC4EC" />
+                <item android:offset="1" android:color="#FF4E9FD4" />
+            </gradient>
+        </aapt:attr>
+    </path>
+</vector>

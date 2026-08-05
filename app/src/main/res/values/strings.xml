@@ -1,0 +1,705 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Plain-language rule for this file: write like you are talking to a friend who
+  has never used a budgeting app. No "transaction", no "net worth", no "debit".
+-->
+<resources>
+    <!--
+      A product name, so it is the same in both languages — `translatable`
+      says that outright rather than leaving a MissingTranslation error in
+      every lint run for somebody to learn to ignore.
+
+      Nothing reads it: the launcher label comes from the `appLabel` manifest
+      placeholder, which each build type sets so a debug install is obvious
+      beside a real one. Kept because it is the app's name and the first thing
+      anything new would reach for.
+    -->
+    <string name="app_name" translatable="false">My Wallet</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_timeline">Timeline</string>
+    <string name="nav_accounts">Accounts</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Home -->
+    <string name="home_came_in">Came in</string>
+    <string name="home_went_out">Went out</string>
+    <string name="home_where_it_went">Where it went</string>
+    <string name="home_recent">Recent</string>
+    <string name="home_see_all">See all</string>
+    <string name="home_empty_title">Nothing here yet</string>
+    <string name="home_empty_body">Add your first expense or payment to get started.</string>
+    <string name="home_saved_this_month">You kept %1$s this month.</string>
+    <string name="home_overspent_this_month">You spent %1$s more than came in.</string>
+
+    <!-- Add / edit money -->
+    <string name="add_money_out">Money out</string>
+    <!-- The three ways a movement starts, said at the button that starts it. -->
+    <string name="add_entry_out">Something you paid for</string>
+    <string name="add_entry_in">Something you were paid</string>
+    <string name="add_entry_transfer">Between two of your own accounts</string>
+    <string name="add_money_in">Money in</string>
+    <string name="add_title_new">Add money</string>
+    <string name="add_title_edit">Edit entry</string>
+    <string name="add_amount">How much?</string>
+    <string name="add_when">When?</string>
+    <!-- The note is what a movement is called. It stands where the label used to:
+         nothing else on a row distinguishes one payment of a bank's from another,
+         so it is asked first and asked for. -->
+    <string name="add_note">Note</string>
+    <string name="add_note_hint">Anything you want to remember</string>
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_undo">Undo</string>
+    <string name="action_done">Done</string>
+    <string name="error_amount_required">Enter an amount first</string>
+    <string name="error_note_required">Say what this is for first</string>
+    <string name="deleted_snackbar">Deleted</string>
+    <!-- A swipe asks before it acts, wherever it is offered. The words say what
+         goes and what comes of it, since the row itself is already off screen
+         behind the dialog. -->
+    <string name="entry_delete_title">Remove this movement?</string>
+    <string name="entry_delete_body">It comes off every balance and total it was part of.</string>
+    <string name="entry_delete_repeat_title">Remove this repeating payment?</string>
+    <string name="entry_delete_repeat_body">Every occurrence goes — the ones already recorded and the ones still to come — and the repeat stops. Swipe a single date away instead to drop only that one.</string>
+    <!-- One occurrence of a repeating rule that has not happened yet. The rule
+         itself stays, which is the whole of what the reader needs to know. -->
+    <string name="projection_delete_title">Skip this payment?</string>
+    <string name="projection_delete_body">Only this one date is dropped. The repeat carries on as it was.</string>
+    <string name="projection_delete_action">Skip</string>
+    <!-- A lump sum off a debt cannot be removed while a later one is on file:
+         the later payment was worked out from the balance this one left. Says
+         what to do about it rather than only that it was refused. -->
+    <string name="delete_blocked_title">Later payment first</string>
+    <string name="delete_blocked_body">A later payment off this debt was worked out from the balance this one left behind. Remove that one first and this can go.</string>
+
+    <!-- Timeline -->
+    <string name="timeline_empty">Everything you add appears here, day by day.</string>
+    <string name="timeline_filter_all">Everything</string>
+    <string name="timeline_filter_in">Money in</string>
+    <string name="timeline_filter_out">Money out</string>
+
+    <!-- Labels -->
+    <string name="error_label_name_required">Give the label a name</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <!-- What each card actually does, one quiet line under it. Two of these are
+         worth more than the rest: changing the currency re-values every figure
+         already recorded, and changing the calendar changes none of them — and
+         both of those are the question a user hesitates over before tapping. -->
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">System</string>
+    <string name="settings_language_explain">Choose your preferred app language.</string>
+    <string name="settings_currency">Currency</string>
+    <string name="settings_currency_explain">Choose your preferred currency.</string>
+    <!-- Light, dark, or the phone's own. -->
+    <string name="settings_theme">Appearance</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_theme_explain">Choose your preferred app appearance.</string>
+    <string name="settings_calendar">Calendar</string>
+    <string name="settings_calendar_gregorian">English (AD)</string>
+    <string name="settings_calendar_bikram">Nepali (BS)</string>
+    <string name="settings_calendar_explain">Choose your preferred calendar.</string>
+    <!-- The two calendars named on their own, for the sentences that have to say
+         which one a bank is counting in. The same words the chips above are
+         picked by, less the era: "English (AD)" is the answer being chosen, and
+         "follows the English calendar" is that answer read back mid-sentence.
+         They said "International" for a while, which was a third name for a
+         thing the settings page already called two. -->
+    <string name="calendar_name_english">English</string>
+    <string name="calendar_name_nepali">Nepali</string>
+    <string name="settings_backup">Backup</string>
+    <string name="settings_backup_explain">Back up, restore, and schedule automatic backups.</string>
+    <string name="settings_backup_now">Back up now</string>
+    <string name="settings_backup_restore">Restore from a backup</string>
+    <string name="settings_backup_auto">Automatic backup</string>
+    <string name="settings_backup_never">Never backed up</string>
+    <string name="settings_backup_last">Last backup: %1$s</string>
+    <!-- The phone's own lock, asked for before the app opens. Deliberately not
+         a passcode of its own: one more thing to forget, guarding the only copy
+         of the user's financial history. -->
+    <string name="settings_lock">App Lock</string>
+    <!-- The row says what tapping it would do, not what the setting is called:
+         the switch beside it already shows which way it stands, and "Ask before
+         opening" left the reader working out what "on" meant. -->
+    <string name="settings_lock_enable">Enable app lock</string>
+    <string name="settings_lock_disable">Disable app lock</string>
+    <string name="settings_lock_explain">Use your device lock to protect the app.</string>
+    <string name="settings_lock_unavailable">Set a screen lock on your phone first.</string>
+    <string name="lock_title">My Wallet is locked</string>
+    <string name="lock_subtitle">Unlock to see your money</string>
+    <!-- Asked before the switch is saved, not after: the question here is
+         whether this phone's lock can be got past at all, which is a different
+         question from "let me in". -->
+    <string name="lock_subtitle_confirm">Confirm your lock to turn this on</string>
+    <string name="lock_unlock">Unlock</string>
+    <!-- The three questions asked before the app is opened for the first time.
+         Every figure and every date the app draws is written in these answers,
+         which is why they are asked on the way in rather than found in Settings
+         afterwards. The setup_lock_* four are the sheet that comes up from the
+         bottom a while later — a suggestion made over a page of the user's own
+         money, not a question standing between them and it. -->
+    <string name="setup_title">Welcome to My Wallet</string>
+    <string name="setup_subtitle">A few things first, so the app reads the way you do.</string>
+    <string name="setup_continue">Continue</string>
+    <string name="setup_changeable">You can change any of this later in Settings.</string>
+    <string name="setup_lock_title">Do you want to enable App Lock?</string>
+    <string name="setup_lock_body">Use your fingerprint, face or screen lock to open My Wallet. Nothing new to remember — it asks for what your phone already has.</string>
+    <string name="setup_lock_enable">Turn on lock</string>
+    <string name="setup_lock_skip">Skip</string>
+    <!-- Said once, on the accounts page, with a finger pointed at the button
+         that opens the six kinds of holding. It is the one thing on that page a
+         new install cannot guess: an empty list says nothing about where a
+         first account comes from. -->
+    <string name="hint_first_account_title">Add Your First Account</string>
+    <string name="hint_first_account_body">Add an account to get started. You can add bank accounts, wallets, loans or goals.</string>
+    <string name="hint_swipe_period_title">Swipe to Change the Month</string>
+    <string name="hint_swipe_period_body">Swipe on page left/right to change the month</string>
+    <string name="hint_swipe_delete_title">Swipe to Delete</string>
+    <!-- The same lesson is taught on the Timeline and on Accounts, and the first
+         clause is word for word the same in both: a swipe takes a row away
+         wherever the row is, and saying it two ways would read as two gestures.
+         What the accounts one adds is the second gesture that page has and the
+         timeline has not — a long press on a holding corrects its balance. -->
+    <string name="hint_swipe_delete">Swipe left to delete an entry.</string>
+    <string name="hint_swipe_delete_holding">Swipe left to delete an entry, or long-press it to add an adjusted balance.</string>
+    <string name="hint_skip">Skip</string>
+    <string name="practice_entry_note">Practice entry</string>
+    <string name="demo_account_name">Demo Bank</string>
+    <string name="hint_got_it">Got it</string>
+    <!-- Backup, restore and updates: said in the user's language.
+         The failures underneath are device and permission problems the user can
+         do nothing specific about, so each is one plain sentence. The exception
+         is a file this build cannot read, which has an answer. -->
+    <string name="settings_up_to_date">You are up to date</string>
+    <string name="settings_update_check_failed">Could not check for updates</string>
+    <string name="settings_update_failed">Could not download the update</string>
+    <string name="settings_backup_saved">Backup saved</string>
+    <string name="settings_backup_failed">Could not save the backup</string>
+    <plurals name="settings_restored_entries">
+        <item quantity="one">%1$d entry restored</item>
+        <item quantity="other">%1$d entries restored</item>
+    </plurals>
+    <plurals name="settings_restored_holdings">
+        <item quantity="one">%1$d account, debt or rule</item>
+        <item quantity="other">%1$d accounts, debts and rules</item>
+    </plurals>
+    <string name="settings_restore_failed">Could not read that backup</string>
+    <string name="settings_restore_too_new">This backup was made by a newer version of My Wallet. Update the app first.</string>
+    <string name="settings_erased">Everything deleted</string>
+    <string name="settings_about">About</string>
+    <string name="settings_version">Version %1$s</string>
+
+    <!-- Backup frequency -->
+    <string name="backup_off">Off</string>
+    <string name="backup_daily">Every day</string>
+    <string name="backup_weekly">Every week</string>
+    <string name="backup_monthly">Every month</string>
+
+    <!-- Seeded starter labels -->
+    <string name="entry_interest">Interest</string>
+
+    <!-- Generic -->
+    <string name="cd_back">Go back</string>
+    <string name="cd_add_money">Add money</string>
+    <string name="cd_close">Close</string>
+    <!-- Month strip captions -->
+    <!--
+      The quantity is the *span* — day one of a month reads "of the 1 days"
+      without it. The spending count is the figure being reported and takes no
+      agreement of its own.
+    -->
+    <string name="home_strip_none">No spending recorded in this month.</string>
+    <string name="home_strip_cd">Daily spending across %1$s. Tallest bar is the biggest day.</string>
+    <string name="home_previous_month">Previous month</string>
+    <string name="home_next_month">Next month</string>
+    <string name="home_back_to_now">Back to this month</string>
+    <string name="home_no_account">No account</string>
+    <string name="home_breakdown_empty">No spending this month yet.</string>
+    <string name="settings_pick_folder">Choose a folder for backups</string>
+    <!-- Accounts -->
+    <string name="accounts_title">Where your money is</string>
+    <string name="accounts_total">What you have</string>
+    <string name="accounts_add">Add account</string>
+    <!-- The form's own title, which names what is being added. "Add account"
+         over a form asking for a policy's premium and maturity was the sheet's
+         question going unanswered on the page that followed it. -->
+    <string name="accounts_add_bank">Add a bank account</string>
+    <string name="accounts_add_wallet">Add a wallet account</string>
+    <string name="accounts_add_cash">Add a cash account</string>
+    <string name="accounts_add_person">Add a person account</string>
+    <string name="accounts_add_insurance">Add an insurance account</string>
+    <string name="accounts_add_goal">Add a goal account</string>
+    <!-- Asked before the form opens, so the form never has to. One line each,
+         because a policy and a goal both take money in every month and the
+         difference is the whole reason someone hesitates here. -->
+    <string name="add_holding_bank">Account, deposit, loan or card</string>
+    <string name="add_holding_wallet">eSewa, Khalti, Wise…</string>
+    <string name="add_holding_cash">Money in hand</string>
+    <string name="add_holding_person">Money you lent or borrowed</string>
+    <string name="add_holding_insurance">A policy you pay premiums on</string>
+    <string name="add_holding_goal">Money put aside for something</string>
+    <string name="accounts_edit">Edit account</string>
+    <string name="accounts_name">Name</string>
+    <string name="accounts_name_hint">Cash, Pocket money…</string>
+    <string name="accounts_bank_name">Bank name</string>
+    <string name="accounts_bank_name_hint">Global IME, Nabil…</string>
+    <string name="accounts_wallet_name">Wallet name</string>
+    <string name="accounts_wallet_name_hint">eSewa, Khalti, Wise…</string>
+    <string name="accounts_kind">What is it?</string>
+    <string name="accounts_kind_bank">Bank</string>
+    <string name="accounts_kind_savings">Savings</string>
+    <string name="accounts_kind_current">Current</string>
+    <string name="accounts_kind_loan">Loan</string>
+    <!-- One product under two names. A credit card and an overdraft are the
+         same arrangement — an approved ceiling, money drawn against it, interest
+         on what is actually drawn — so they are one kind wearing both words
+         rather than a second kind doing the same arithmetic. -->
+    <string name="accounts_kind_overdraft">Credit card / Overdraft</string>
+    <!-- Money put away for a fixed term. Worded as people speak, not as a
+         bank's product sheet: "how long" rather than "tenor", "where it goes
+         afterwards" rather than "maturity instruction". -->
+    <string name="accounts_kind_fd">Fixed deposit</string>
+    <string name="accounts_holding_name">Name (optional)</string>
+    <string name="fd_rate">Interest rate</string>
+    <string name="fd_how_long">How long?</string>
+    <string name="fd_started_on">Start date</string>
+    <string name="fd_on_date">on %1$s</string>
+    <string name="fd_error_started">Say the day the money went in.</string>
+    <string name="fd_lands_in">Money receive on</string>
+    <string name="fd_holds_earned">Interest earned</string>
+    <string name="fd_error_rate">Say what interest it pays.</string>
+    <string name="fd_error_term">Say how long it is locked for.</string>
+    <string name="fd_row_matures">Deposit matures</string>
+    <!-- A policy paid for in premiums until the day it pays out. Worded the way
+         a policy document is read, not the way an insurer sells it: what you get
+         back, what you pay, how often, and when it ends. -->
+    <string name="accounts_kind_insurance">Insurance</string>
+    <string name="insurance_policy_name">Policy name</string>
+    <string name="insurance_policy_name_hint">Life, endowment, education…</string>
+    <string name="insurance_maturity_amount">Maturity amount</string>
+    <string name="insurance_premium">Premium</string>
+    <string name="insurance_started_on">Start date</string>
+    <string name="insurance_matures_on">Maturity date</string>
+    <!-- A policy paid for in one premium is a real arrangement, so the count
+         has to agree with its noun: "1 payment", not "1 payments". -->
+    <plurals name="insurance_payments_total">
+        <item quantity="one">%1$d payment, %2$s in all</item>
+        <item quantity="other">%1$d payments, %2$s in all</item>
+    </plurals>
+    <string name="insurance_pays_out">Pays out %1$s on %2$s</string>
+    <!-- The payout set against every premium put in. Two strings rather than a
+         signed figure: "-रू 6,00,000 more than the premiums" is a sum to work
+         out, and a term plan handing nothing back is a real policy. -->
+    <string name="insurance_gain">%1$s more than the premiums</string>
+    <string name="insurance_shortfall">%1$s less than the premiums</string>
+    <string name="insurance_row_matures">Policy matures</string>
+    <string name="insurance_error_maturity">Say what it pays out at the end.</string>
+    <string name="insurance_error_premium">Say what each premium costs.</string>
+    <!-- A payout smaller than the premiums added up is a term plan and is
+         allowed; one smaller than a single premium is a figure in the wrong
+         box, and the card stops rather than quoting a schedule for it. -->
+    <string name="insurance_error_premium_too_big">Each premium must be less than what the policy pays out.</string>
+    <string name="insurance_error_term">Say how long the policy runs for.</string>
+    <string name="insurance_error_started">Say the day the policy started.</string>
+    <string name="insurance_error_pay_from">Say which account the premiums come from.</string>
+    <!-- Money put aside on purpose. The words are a saver's, not a bank's:
+         what it is for, what it costs each time, and how far along it is. -->
+    <string name="accounts_kind_goal">Goal</string>
+    <string name="accounts_goals">Goals</string>
+    <!-- eSewa and Khalti are places money is held, like a bank; they simply
+         have one holding each, so they had no name to head a section with and
+         fell in among the cash. -->
+    <string name="accounts_wallets">Wallets</string>
+    <string name="goal_name">Name</string>
+    <string name="goal_name_hint">Nepal trip, new laptop…</string>
+    <string name="goal_amount">Goal amount</string>
+    <string name="goal_put_aside">Your saving each time</string>
+    <string name="goal_started_on">Start date</string>
+    <string name="goal_ready_by">%1$s by %2$s</string>
+    <string name="goal_saved_title">Put aside so far</string>
+    <!-- Money in and out of a goal outside its plan. A deposit is the whole
+         reason anyone watches one; a withdrawal is the other thing that
+         happens. Both move the day it is reached rather than what is put aside
+         each time, which is the figure the user committed to. -->
+    <string name="goal_deposit">Deposit</string>
+    <string name="goal_withdraw">Withdraw</string>
+    <string name="goal_deposit_from">Money comes from</string>
+    <string name="goal_withdraw_into">Money goes to</string>
+    <string name="goal_moved_on">Moved on</string>
+    <string name="goal_after_move">It would then hold %1$s.</string>
+    <string name="goal_then_ready">Reached by %1$s</string>
+    <string name="goal_deposit_apply">Put it in</string>
+    <string name="goal_withdraw_apply">Take it out</string>
+    <string name="goal_withdraw_too_much">More than it holds</string>
+    <string name="goal_saved_of">%1$s of %2$s · %3$d%% there</string>
+    <string name="goal_left">%1$s still to go</string>
+    <string name="goal_reached">Goal reached.</string>
+    <string name="goal_row_reached">Goal reached</string>
+    <string name="goal_error_target">Say what you are saving towards.</string>
+    <string name="goal_error_term">Say how long you have to save it.</string>
+    <string name="goal_error_started">Say the day you start putting money aside.</string>
+    <string name="goal_error_pay_from">Say which account the money comes from.</string>
+    <string name="accounts_kind_wallet">Wallet</string>
+    <string name="accounts_kind_cash">Cash</string>
+    <string name="accounts_colour">Colour</string>
+    <string name="accounts_currency">Currency</string>
+    <string name="accounts_currency_more">Show more</string>
+    <string name="error_wallet_currency_taken">You already have a wallet with this name in this currency. Pick another currency, or open the one you have and correct its balance.</string>
+    <string name="accounts_opening">Starting balance</string>
+    <!-- What a holding holds, where nothing more precise is wanted: the create
+         form for money between people, which sits under a heading already
+         reading "I borrowed" or "I lent". -->
+    <string name="accounts_amount">Amount</string>
+    <!-- The same figure once the arrangement exists, named for what it is: the
+         debt as it stood at the beginning. What is owed today is on the card
+         below it, and is a different number the moment anything is repaid. -->
+    <string name="accounts_amount_starting">Starting amount</string>
+    <!-- A bank's term loan, on the way in and afterwards. -->
+    <string name="accounts_amount_loan">Loan amount</string>
+    <!-- A card or an overdraft, where the figure is a ceiling the bank set
+         rather than anything that has been taken: what has actually been drawn
+         is on the card underneath. -->
+    <string name="accounts_amount_limit">Approved amount limit</string>
+    <string name="accounts_adjust">Correct this balance</string>
+    <string name="accounts_adjust_hint">What is actually left?</string>
+    <string name="accounts_adjust_explain">Use this when cash was spent or received outside the app. It corrects the balance without pretending to be income.</string>
+    <string name="accounts_rate_missing">Rate unavailable</string>
+    <string name="add_account">Paid from</string>
+    <string name="add_account_in">Landed in</string>
+    <string name="add_converted">= %1$s</string>
+    <!-- Updates -->
+    <string name="update_check">Check for updates</string>
+    <string name="update_checking">Checking…</string>
+    <string name="update_available">Version %1$s is ready to install</string>
+    <string name="update_install">Download and install</string>
+    <string name="date_select_title">Select date</string>
+    <!-- Repeats -->
+    <string name="repeat_this">Recurring payment</string>
+    <string name="repeat_weekly">Weekly</string>
+    <string name="repeat_fortnightly">Fortnightly</string>
+    <string name="repeat_monthly">Monthly</string>
+    <string name="repeat_quarterly">Every 3 months</string>
+    <string name="repeat_half_yearly">Every 6 months</string>
+    <string name="repeat_yearly">Yearly</string>
+    <string name="repeat_explain">Every occurrence is saved separately and uses the %1$s calendar. Changes affect future ones only.</string>
+    <!-- Under the "Uses default calendar" switch on the money form. Short,
+         because the switch above it has already asked the question and the
+         line only has to say what the answer means. -->
+    <string name="repeat_calendar_explain">Every transaction or log follows the %1$s calendar.</string>
+    <string name="entry_loan_instalment_note">One payment of a loan. Its schedule lives with the loan itself.</string>
+    <string name="projected_balance">Balance %1$s</string>
+    <!-- Loans -->
+    <string name="accounts_other">Other</string>
+    <string name="accounts_owe">Personal amount to pay</string>
+    <string name="loan_rate_short">%1$.2f%%</string>
+    <string name="loan_emi_short">%1$s each time</string>
+    <string name="loan_emi_at_end_short">%1$s at the end</string>
+    <string name="loan_incl_interest">incl. %1$s interest</string>
+    <string name="loan_of_principal">of %1$s</string>
+    <string name="loan_rate">Interest rate</string>
+    <string name="rate_changed_on">Rate changed from</string>
+    <!-- A debt that never had a rate is not changing one; it is getting its first -->
+    <string name="rate_applied_from">Interest rate applied from</string>
+    <string name="rate_applied_explain">Interest is counted from this day on. Everything before it stays as it was: nothing was charged.</string>
+    <!-- Zero, or an emptied box: the date says when the charging stops -->
+    <string name="rate_stops_from">Interest stops from</string>
+    <string name="rate_stops_explain">Nothing is charged from this day on. Interest that ran before it still counts.</string>
+    <string name="rate_stops_all_explain">Dated back to the day the interest started, so none of it is charged at all.</string>
+    <string name="loan_add_interest">Add interest to this account</string>
+    <string name="rate_change_explain">The bank moved this rate. Tell us the day it started and everything from then on is worked out at the new one.</string>
+    <!-- No bank involved: the two of them agreed a different rate between themselves -->
+    <string name="rate_change_explain_person">You agreed a different rate. Tell us the day it started and everything from then on is worked out at the new one.</string>
+    <string name="rate_history">Rate history</string>
+    <string name="interest_paid_line">Interest paid in so far: %1$s</string>
+    <string name="statement_title">What this account holds</string>
+    <string name="statement_every">Every transaction</string>
+    <string name="statement_explain">Newest first, with the balance after each transaction. Swipe left to delete.</string>
+    <string name="statement_empty">No transactions in this account yet.</string>
+    <string name="see_more">See more</string>
+    <string name="statement_correction">Balance corrected</string>
+    <string name="rate_history_row">%1$s from %2$s</string>
+    <string name="account_rate">Interest rate</string>
+    <string name="account_payout_every">Interest paid every</string>
+    <string name="account_rate_explain">Interest rate is calculated daily. Interest is paid every selected month(s) or year(s).</string>
+    <!-- The same, where the switch above is absent and this line has to carry
+         which calendar the periods are counted in. -->
+    <string name="account_rate_explain_calendar">Interest rate is calculated daily. Interest is paid every selected month(s) or year(s) following the %1$s calendar.</string>
+    <string name="account_payout_settled">Interest has been credited using this schedule, and all interest paid so far has been calculated from it. Changing it now will affect future interest credits.</string>
+    <!-- Reading dates in Nepali is one thing; a bank counting its quarters or its
+         instalments in Nepali months is another, and most do not. So the app
+         asks, per holding, and the answer is off unless the user says otherwise.
+         The label names whichever calendar is set, because that is the only one
+         ticking the box could mean; the line under it names what is actually
+         being counted in, which is the English calendar until it is ticked. -->
+    <string name="holding_interest_calendar">Uses default calendar</string>
+    <!-- One switch, but it counts a different thing on each form it appears on,
+         and the line under it names that thing rather than listing all of them:
+         a goal has no EMI and a loan pays no interest into anything. -->
+    <string name="holding_calendar_explain_interest">Interest payout follows the %1$s calendar.</string>
+    <string name="holding_calendar_explain_emi">EMI calculation follows the %1$s calendar.</string>
+    <string name="holding_calendar_explain_deposit">Deposit term follows the %1$s calendar.</string>
+    <string name="holding_calendar_explain_premium">Premiums follow the %1$s calendar.</string>
+    <string name="holding_calendar_explain_goal">Contributions follow the %1$s calendar.</string>
+    <string name="loan_term">How long?</string>
+    <string name="loan_term_months">Months</string>
+    <string name="loan_term_years">Years</string>
+    <string name="loan_person_name">Person’s name</string>
+    <string name="loan_person_name_hint">A friend or family member</string>
+    <string name="loan_pay_every">Pay every?</string>
+    <string name="loan_pay_at_end">At the end</string>
+    <string name="loan_pay_at_end_explain">No instalments. The loan and all its interest are paid in one go on the day the term runs out.</string>
+    <string name="loan_emi_computed">You pay each time</string>
+    <string name="loan_one_go_total">You pay back in total</string>
+    <string name="loan_one_go_back">They pay back in total</string>
+    <string name="loan_one_go_interest">Including %1$s of interest</string>
+    <string name="loan_one_go_by">By %1$s, the agreed length after the day it moved</string>
+    <string name="loan_total_interest">Interest over the whole loan: %1$s</string>
+    <string name="next_after_all">Accounts</string>
+    <string name="next_from_now">now %1$s</string>
+    <string name="next_loans_left">Loan accounts</string>
+    <!-- Prepayment -->
+    <string name="loan_owed_title">To pay</string>
+    <string name="loan_drawn_title">Drawn so far</string>
+    <string name="loan_available">%1$s still available to draw.</string>
+    <string name="loan_paid_principal_outright">Paid off early: %1$s</string>
+    <string name="loan_emi_split">%1$s off the loan, %2$s in interest</string>
+    <string name="loan_schedule_title">Every payment</string>
+    <!-- The same table on a debt with payments behind it: those rows are
+         history the form cannot change, so it lists only what is left. -->
+    <string name="loan_schedule_remaining">Remaining payments</string>
+    <!-- The table is a forecast and says so. Read as a record, a user checking
+         it against a bank statement would think the app had the wrong figures. -->
+    <string name="loan_schedule_nth">Payment %1$d</string>
+    <string name="loan_schedule_left">Left after it: %1$s</string>
+    <string name="loan_schedule_made">%1$d already paid before this.</string>
+    <string name="loan_schedule_col_date">Date</string>
+    <string name="loan_schedule_col_payment">Payment</string>
+    <string name="loan_schedule_col_interest">Interest</string>
+    <string name="loan_schedule_col_left">Left</string>
+    <!-- The way into the table, at the foot of the card that quotes the
+         instalment — the same offer a debt's payments and a holding's
+         transactions get, and drawn by the same footer. -->
+    <string name="loan_schedule_open">See the payment schedule</string>
+    <!-- Why the first row is bigger than the rest. A payment of double the usual
+         figure with nothing to explain it reads as the app having lost count. -->
+    <plurals name="loan_schedule_arrears">
+        <item quantity="one">Includes %1$d missed instalment, added to this payment.</item>
+        <item quantity="other">Includes %1$d missed instalments, added to this payment.</item>
+    </plurals>
+    <!-- The way back out of an aggregated payment: a missed instalment the bank
+         actually took a fortnight late is a payment on that day, not a doubled
+         figure next month. Only the day is asked for — what an instalment is
+         worth is the schedule's answer, not the user's. -->
+    <string name="loan_schedule_split">Split this payment</string>
+    <string name="loan_schedule_split_explain">Tap it to date them separately.</string>
+    <string name="loan_schedule_split_title">When were they paid?</string>
+    <string name="loan_schedule_split_body">Each date records a payment of %1$s on that day, and takes it off this one. Leave one empty to keep it here.</string>
+    <string name="loan_schedule_split_due">Instalment due %1$s</string>
+    <string name="loan_schedule_split_hint">Not paid separately</string>
+    <string name="loan_schedule_done_title">Nothing left to pay</string>
+    <string name="loan_schedule_done">Every instalment on this schedule has been made.</string>
+    <string name="loan_principal_cleared">%1$s off the loan so far</string>
+    <string name="loan_principal_cleared_lent">%1$s of it back so far</string>
+    <string name="loan_paid_interest_outright">Interest paid on its own: %1$s</string>
+    <string name="prepay_title">Payment</string>
+    <string name="loan_interest_accrued">About %1$s interest built up so far, still to pay.</string>
+    <string name="loan_interest_accrued_lent">About %1$s interest earned so far, still to come.</string>
+    <string name="loan_settle_today">Settled today, that comes to %1$s.</string>
+    <!-- A card in the row of sources, with what it has left to draw. The
+         headroom is what decides whether the purchase being typed is possible. -->
+    <string name="entry_card_available">%1$s · %2$s left</string>
+    <string name="entry_over_limit">That is more than this card has left to draw.</string>
+    <string name="entry_drawdown_note">Taken from %1$s. Borrowed money is not income, so no label applies.</string>
+    <string name="prepay_title_overdraft">Payment</string>
+    <string name="prepay_amount">How much?</string>
+    <string name="prepay_amount_overdraft">How much?</string>
+    <string name="prepay_new_balance">You would owe %1$s after this.</string>
+    <string name="prepay_new_balance_lent">They would owe you %1$s after this.</string>
+    <plurals name="prepay_keep_emi">
+        <item quantity="one">Keep the same payment, finish in %1$d month</item>
+        <item quantity="other">Keep the same payment, finish in %1$d months</item>
+    </plurals>
+    <string name="prepay_keep_term">Keep the same end date, pay %1$s each time</string>
+    <string name="prepay_saves">Saves %1$s in interest</string>
+    <string name="accounts_owed_line">− %1$s to pay</string>
+    <string name="accounts_lent_line">+ %1$s to receive</string>
+    <string name="accounts_also_holding">and %1$s held</string>
+    <string name="accounts_net_worth">%1$s all told</string>
+    <string name="accounts_owed_to_you">Personal amount to receive</string>
+    <string name="accounts_kind_person">A person</string>
+    <string name="person_borrowed">I borrowed</string>
+    <string name="person_lent">I lent</string>
+    <string name="loan_owed_to_you_title">To receive</string>
+    <string name="loan_paid_principal_outright_lent">Repaid early: %1$s</string>
+    <string name="loan_paid_interest_outright_lent">Interest received: %1$s</string>
+    <string name="prepay_title_lent">Payment</string>
+    <string name="prepay_amount_lent">How much?</string>
+    <string name="add_direction_transfer">Transfer</string>
+    <string name="transfer_from">Out of</string>
+    <string name="transfer_to">Into</string>
+    <string name="transfer_row">Transfer</string>
+    <string name="transfer_arrives">≈ %1$s arrives</string>
+    <string name="transfer_same_account">Pick two different accounts.</string>
+    <string name="transfer_no_rate">No exchange rate for these two currencies yet. Connect to the internet and try again.</string>
+    <string name="transfer_needs_accounts">Moving money needs two accounts. Add another one first.</string>
+    <string name="transfer_repeat">Repeat this transfer</string>
+    <string name="series_orphan_title">Stop this repeating payment?</string>
+    <string name="series_orphan_body">There is no entry behind this one any more, so the only thing left to do with it is stop it. Payments already recorded stay where they are.</string>
+    <string name="series_orphan_stop">Stop it</string>
+    <string name="settings_start_over">Start over</string>
+    <string name="settings_erase">Delete everything</string>
+    <string name="settings_erase_explain">Reset the app to its initial state.</string>
+    <string name="settings_erase_confirm_title">Delete everything?</string>
+    <string name="settings_erase_confirm_body">Every entry, account, loan and repeating payment goes, and this cannot be undone. If there is anything you might want back, save a backup first.</string>
+    <string name="loan_style">How is it repaid?</string>
+    <string name="loan_style_level">Normal EMI</string>
+    <string name="loan_style_principal">Fixed chunk of the loan</string>
+    <string name="loan_style_interest">Interest only</string>
+    <string name="loan_style_explain">Normal EMI: Fixed payment each period, interest decreases while principal repayment increases over time.\nInterest only: Pay only interest until the principal is repaid at the end of the term.</string>
+    <string name="loan_first_payment">Your first payment</string>
+    <string name="loan_falls_to">Falling to %1$s by the last one.</string>
+    <plurals name="loan_clears_in">
+        <item quantity="one">Clears in %1$d month.</item>
+        <item quantity="other">Clears in %1$d months.</item>
+    </plurals>
+    <string name="prepay_apply">Take it off the balance</string>
+    <string name="accounts_show_converted">Show this account in %1$s</string>
+    <string name="accounts_show_converted_explain">Off, it is shown in %1$s as it is, with the converted figure underneath.</string>
+    <string name="loan_show_converted">Show this loan in %1$s</string>
+    <string name="loan_show_converted_explain">Off, it is shown in %1$s as it is.</string>
+    <string name="loan_last_payment">The last one is %1$s.</string>
+    <string name="action_clear">Clear</string>
+    <string name="loan_disbursed_on">Money received date</string>
+    <string name="loan_first_due">First EMI date</string>
+    <string name="loan_first_due_hint">The day the bank takes the first EMI. Every later one is counted from this date + interval you selected.</string>
+    <string name="loan_pick_date">Pick a date</string>
+    <string name="loan_no_date">No date</string>
+    <!-- The day a card or an overdraft was approved by the bank; with the agreed
+         length it is the day the facility runs out -->
+    <string name="loan_opened_on">Start date</string>
+    <string name="loan_expires_on">Runs until %1$s.</string>
+    <string name="loan_expired_on">Expired on %1$s — it is no longer offered as somewhere money can be spent from.</string>
+    <!-- The day the money actually changed hands, which is what interest runs from -->
+    <string name="loan_borrowed_on">Money borrowed date</string>
+    <string name="loan_lent_on">Money lent date</string>
+    <string name="loan_account_borrowed">Money pay from</string>
+    <string name="loan_account_lent">Money receive on</string>
+    <!-- The other end of money between people: where it went the day it moved -->
+    <string name="loan_account_received">Money received on</string>
+    <string name="loan_account_paid_out">Money paid from</string>
+    <string name="loan_account_none">Not recorded</string>
+    <string name="loan_account_received_explain">Choose one and the money lands in it on the day you borrowed it. Leave blank if it\'s already included in the current balance.</string>
+    <string name="loan_account_paid_out_explain">Choose one and the money leaves it on the day you lent it. Leave blank if it\'s already taken off the current balance.</string>
+    <!-- What is left of the agreed total, on the card the total leads -->
+    <string name="loan_owed_line">%1$s of it still owed</string>
+    <string name="loan_owed_line_lent">%1$s of it still to come back</string>
+    <string name="loan_due_short">due %1$s</string>
+    <string name="loan_since_short">since %1$s</string>
+    <!-- The ledger: everything that has actually happened to one loan -->
+    <string name="loan_ledger_open">See every payment</string>
+    <string name="loan_ledger_title">Payment by payment</string>
+    <string name="loan_ledger_explain">Swipe a payment left to delete it. The balance will be restored, and a missed instalment is added to the next one.</string>
+    <!-- Money between people has no schedule, so there is no missed instalment
+         to warn about: the sentence stops at what the swipe does and what comes
+         back. -->
+    <string name="loan_ledger_explain_person">Swipe a payment left to delete it. The balance will be restored.</string>
+    <string name="loan_ledger_empty_title">Nothing recorded yet</string>
+    <string name="loan_ledger_empty">Payments appear here as you record them, with the balance owing after each one.</string>
+    <string name="loan_ledger_paid">%1$s paid so far, interest included</string>
+    <string name="loan_ledger_received">%1$s back so far</string>
+    <string name="loan_ledger_added">%1$s more borrowed since it started</string>
+    <string name="loan_ledger_lent_more">%1$s more lent since it started</string>
+    <!-- One payment of a loan's own schedule, named the same way wherever it is
+         drawn: the row on Home, the Timeline and Reminders, and the kind on the
+         loan's own statement. One string, because a row and the ledger it
+         appears in must not call the same payment two different things. -->
+    <string name="loan_movement_instalment">EMI Instalment</string>
+    <string name="loan_movement_received">Repayment</string>
+    <string name="loan_movement_interest">Interest only</string>
+    <string name="loan_movement_interest_lent">Interest received</string>
+    <!-- Money spent straight from a card: the one movement that is spending
+         and the debt growing at the same time. -->
+    <string name="loan_movement_spent">Spent on card</string>
+    <string name="loan_movement_drawn">Drawn</string>
+    <string name="loan_movement_borrowed">Borrowed</string>
+    <string name="loan_movement_lent">Lent</string>
+    <string name="loan_movement_borrowed_more">Borrowed more</string>
+    <string name="loan_movement_lent_more">Lent more</string>
+    <!-- What one payment against a debt was about, in the user's own words.
+         Optional: the debt is what these rows are about, and most need no
+         explaining — but three payments to the same person are otherwise three
+         identical rows. -->
+    <string name="loan_movement_note">Note (optional)</string>
+    <!-- The app's word for what a movement did, then what the user wrote about
+         it. A hyphen rather than the interpunct the rest of the line uses, so
+         the two read as one phrase and its qualifier rather than as two more
+         facts beside the account and the debt. -->
+    <string name="loan_movement_with_note">%1$s - %2$s</string>
+    <string name="loan_paid_on">Paid on</string>
+    <string name="loan_paid_on_lent">Received on</string>
+    <!-- More of the same arrangement -->
+    <string name="loan_more_title">Borrow more</string>
+    <string name="loan_more_title_lent">Lend more</string>
+    <string name="loan_more_amount">How much more?</string>
+    <string name="loan_more_on">Added on</string>
+    <string name="loan_more_new_balance">You would owe %1$s after this.</string>
+    <string name="loan_more_new_balance_lent">They would owe you %1$s after this.</string>
+    <string name="loan_more_apply">Add it on</string>
+
+    <!-- Removing a holding -->
+    <string name="accounts_delete_title">Delete %1$s?</string>
+    <string name="accounts_delete_body">This removes the account and everything that only existed because of it: every movement it was part of, both halves of its transfers, and any repeating payment through it. It cannot be undone.</string>
+    <string name="accounts_delete_body_debt">This removes the debt and every payment recorded against it, past and scheduled. It cannot be undone.</string>
+
+    <!-- Reminders -->
+    <string name="nav_reminders">Reminders</string>
+    <string name="reminders_empty_title">Nothing due</string>
+    <string name="reminders_empty_body">No payments are scheduled for today.</string>
+    <!-- The same emptiness, on a day the reader stepped to rather than the one
+         the page opens on. "today" would be the wrong word for it. -->
+    <string name="reminders_empty_body_day">No payments are scheduled for this day.</string>
+    <string name="reminders_previous_day">Previous day</string>
+    <string name="reminders_next_day">Next day</string>
+    <string name="reminders_back_to_today">Back to today</string>
+    <string name="reminders_to_pay">%1$s to pay</string>
+    <string name="reminders_coming_in">%1$s coming in</string>
+    <string name="settings_reminders">Reminders</string>
+    <string name="settings_reminders_explain">Choose when reminders are sent.</string>
+    <string name="holding_msg_paid">%1$s paid — %2$s left to pay</string>
+    <string name="holding_msg_received">%1$s received — %2$s still to come back</string>
+    <!-- A payment the user has dated forward: written down, and nothing else until the day comes. -->
+    <string name="holding_msg_due">%1$s noted — nothing comes off the balance until that day</string>
+    <string name="holding_msg_borrowed_more">%1$s more borrowed — %2$s now owed</string>
+    <string name="holding_msg_lent_more">%1$s more lent — %2$s now owed to you</string>
+    <string name="holding_msg_goal_in">%1$s put aside — %2$s saved so far</string>
+    <string name="holding_msg_goal_out">%1$s taken out — %2$s left in it</string>
+    <string name="settings_reminders_same_day">On the day</string>
+    <string name="settings_reminders_one_day">1 day early</string>
+    <string name="settings_reminders_days">%1$d days early</string>
+
+    <!-- Notifications -->
+    <string name="settings_notifications">Notifications</string>
+    <!-- Same rule as the lock's row: it says what the tap does. -->
+    <string name="settings_notify_enable">Enable notifications</string>
+    <string name="settings_notify_disable">Disable notifications</string>
+    <string name="settings_notify_explain">Enables app notifications.</string>
+    <string name="settings_notify_at">Every day at %1$s</string>
+    <string name="settings_notify_pick_time">What time?</string>
+    <string name="settings_notify_unavailable">Android is blocking notifications for this app. Turn them on in the phone\'s settings first.</string>
+    <string name="notify_channel_reminders">Reminders</string>
+    <string name="notify_channel_reminders_explain">A daily note of what falls due.</string>
+    <plurals name="notify_due_count">
+        <item quantity="one">%1$d thing due today</item>
+        <item quantity="other">%1$d things due today</item>
+    </plurals>
+    <plurals name="notify_coming_count">
+        <item quantity="one">%1$d thing coming up</item>
+        <item quantity="other">%1$d things coming up</item>
+    </plurals>
+</resources>

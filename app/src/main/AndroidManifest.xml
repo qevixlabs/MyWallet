@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Only for fetching exchange rates. No account, no analytics, no upload. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!--
+      REQUEST_INSTALL_PACKAGES is deliberately **not** here. It belongs to the
+      in-app updater, which only the GitHub distribution has, so it is declared
+      in src/github/AndroidManifest.xml — a permission declared in main ships in
+      every flavour, and one that lets an app install an APK is exactly what
+      Play's Device and Network Abuse policy is about.
+    -->
+
+    <!--
+      allowBackup is off deliberately. Auto Backup would upload the whole Room
+      database — the user's complete financial history — to their Google Drive,
+      which is the one thing this app says does not happen: no account, no
+      server, the copy on the phone is the only copy. What replaces it is the
+      app's own backup, written to a folder the user picks and restored by hand
+      — the same safety net, said out loud instead of happening behind them.
+    -->
+    <application
+        android:name=".MyWalletApp"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="${appLabel}"
+        android:localeConfig="@xml/locales_config"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MyWallet">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.MyWallet">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
+          The FileProvider that hands a downloaded APK to the system installer
+          lives in the GitHub flavour's manifest, beside the permission and the
+          updater it belongs to. Nothing else in the app shares files: a backup
+          is written through the storage picker the user chose, not through us.
+        -->
+
+        <!--
+          Lets AppCompat store and re-apply the chosen language on API < 33,
+          where the platform has no per-app locale setting of its own.
+        -->
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
+
+        <!--
+          Google Mobile Ads. The SDK reads this at process start and throws if it
+          is missing, so it is required even while nothing has asked for an ad.
+
+          This is the app's **own** AdMob application id, registered against
+          com.qevixlabs.mywallet — see ads/InterstitialAds.kt, and see the
+          applicationId note in ARCHITECTURE.md for why that package can never move
+          again now that an ad unit is bound to it.
+
+          It must match the account the interstitial unit was created under, or
+          the SDK refuses every request at process start.
+
+          Two things must change together with this string, and both are promises
+          made elsewhere. The SDK merges in com.google.android.gms.permission.AD_ID
+          and collects an advertising identifier, so the app is no longer strictly
+          "no server, no account": the Play Data Safety form has to say so, and so
+          does anything in the app that claims otherwise. allowBackup above is
+          still false and still means what it says — the financial history stays
+          on the phone — but that is now a narrower promise than it was.
+        -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-4483991085473763~2654037317" />
+
+        <!-- WorkManager is initialised on demand through Hilt. -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge"
+            xmlns:tools="http://schemas.android.com/tools">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
+    </application>
+</manifest>

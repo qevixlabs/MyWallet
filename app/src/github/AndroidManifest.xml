@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  What the GitHub distribution has and the Play one must not: the ability to
+  hand a downloaded APK to the system installer.
+
+  Both entries are here rather than in `main` because a manifest in `main` is
+  merged into every flavour. Play's Device and Network Abuse policy is explicit —
+  "An app distributed via Google Play may not modify, replace, or update itself
+  using any method other than Google Play's update mechanism" — and a permission
+  to install packages is the first thing a review looks for. The updater itself
+  is in src/github/java for the same reason; the Play build compiles a stub that
+  answers "nothing newer" and can do nothing else.
+
+  Safety here does not rest on the app. The installer asks the user, and Android
+  only accepts an update signed with the same key as the copy already installed,
+  so a substituted APK fails to install rather than replacing a money app.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
+    <application>
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+</manifest>

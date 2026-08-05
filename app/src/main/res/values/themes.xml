@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Parented on AppCompat because the activity is an AppCompatActivity, which
+      is what makes AppCompatDelegate.setApplicationLocales work on every API
+      level. Compose draws all the actual UI; this theme only supplies the
+      window decor.
+    -->
+    <style name="Theme.MyWallet" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowBackground">@color/window_background</item>
+    </style>
+</resources>

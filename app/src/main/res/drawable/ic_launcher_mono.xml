@@ -1,0 +1,19 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- A simple wallet mark: body, flap, and a clasp dot. -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,38h44a8,8 0 0 1 8,8v22a8,8 0 0 1 -8,8h-44a8,8 0 0 1 -8,-8v-22a8,8 0 0 1 8,-8z" />
+    <path
+        android:fillColor="#B8F2D8"
+        android:pathData="M30,38l34,-8a5,5 0 0 1 6,4l1,4z" />
+    <path
+        android:fillColor="#0E5C4A"
+        android:pathData="M68,52h14v12h-14a6,6 0 0 1 0,-12z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M71,58m-3,0a3,3 0 1,0 6,0a3,3 0 1,0 -6,0" />
+</vector>

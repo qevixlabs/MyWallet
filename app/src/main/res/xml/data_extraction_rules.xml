@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Nothing leaves the phone by a route the user did not choose.
+
+  `android:allowBackup="false"` already says this on every version the app runs
+  on, but it is one coarse switch and it is deprecated from Android 12; this
+  says the same thing in the terms Android 12 and higher actually read, so the
+  two cannot drift as the coarse one is phased out.
+
+  Cloud backup is excluded because it uploads the whole Room database — the
+  user's complete financial history — to their Google Drive, silently, on an app
+  that has no account and no server and says so.
+
+  Device transfer is excluded **with** it, and that is the deliberate half. A
+  phone-to-phone transfer touches no cloud and would be perfectly safe on its
+  own — but there is no way to allow it and refuse cloud backup below Android
+  12, and minSdk here is 26. One behaviour on every phone beats a promise that
+  holds on the new ones and quietly does not on the old ones.
+
+  What replaces both is the app's own backup: JSON, to a folder the user picked,
+  restored by hand. See BackupManager.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>

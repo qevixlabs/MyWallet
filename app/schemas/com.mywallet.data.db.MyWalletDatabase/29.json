@@ -1,0 +1,885 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 29,
+    "identityHash": "a9f74b534146b155cd0c5a4c94e4a6fe",
+    "entities": [
+      {
+        "tableName": "money_entry",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `amount_minor` INTEGER NOT NULL, `currency_code` TEXT NOT NULL DEFAULT 'NPR', `base_amount_minor` INTEGER NOT NULL DEFAULT 0, `rate_to_base` REAL NOT NULL DEFAULT 1.0, `base_currency_code` TEXT NOT NULL DEFAULT 'NPR', `direction` TEXT NOT NULL, `occurred_on` INTEGER NOT NULL, `account_id` TEXT, `is_adjustment` INTEGER NOT NULL DEFAULT 0, `series_id` TEXT, `loan_id` TEXT, `loan_part` TEXT, `transfer_id` TEXT, `status` TEXT NOT NULL DEFAULT 'CONFIRMED', `note` TEXT, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`account_id`) REFERENCES `account`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amountMinor",
+            "columnName": "amount_minor",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currencyCode",
+            "columnName": "currency_code",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'NPR'"
+          },
+          {
+            "fieldPath": "baseAmountMinor",
+            "columnName": "base_amount_minor",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "rateToBase",
+            "columnName": "rate_to_base",
+            "affinity": "REAL",
+            "notNull": true,
+            "defaultValue": "1.0"
+          },
+          {
+            "fieldPath": "baseCurrencyCode",
+            "columnName": "base_currency_code",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'NPR'"
+          },
+          {
+            "fieldPath": "direction",
+            "columnName": "direction",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "occurredOn",
+            "columnName": "occurred_on",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accountId",
+            "columnName": "account_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isAdjustment",
+            "columnName": "is_adjustment",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "seriesId",
+            "columnName": "series_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "loanId",
+            "columnName": "loan_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "loanPart",
+            "columnName": "loan_part",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "transferId",
+            "columnName": "transfer_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'CONFIRMED'"
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deletedAt",
+            "columnName": "deletedAt",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_money_entry_occurred_on",
+            "unique": false,
+            "columnNames": [
+              "occurred_on"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_money_entry_occurred_on` ON `${TABLE_NAME}` (`occurred_on`)"
+          },
+          {
+            "name": "index_money_entry_account_id",
+            "unique": false,
+            "columnNames": [
+              "account_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_money_entry_account_id` ON `${TABLE_NAME}` (`account_id`)"
+          },
+          {
+            "name": "index_money_entry_loan_id",
+            "unique": false,
+            "columnNames": [
+              "loan_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_money_entry_loan_id` ON `${TABLE_NAME}` (`loan_id`)"
+          },
+          {
+            "name": "index_money_entry_transfer_id",
+            "unique": false,
+            "columnNames": [
+              "transfer_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_money_entry_transfer_id` ON `${TABLE_NAME}` (`transfer_id`)"
+          },
+          {
+            "name": "index_money_entry_deletedAt",
+            "unique": false,
+            "columnNames": [
+              "deletedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_money_entry_deletedAt` ON `${TABLE_NAME}` (`deletedAt`)"
+          },
+          {
+            "name": "index_money_entry_direction_occurred_on",
+            "unique": false,
+            "columnNames": [
+              "direction",
+              "occurred_on"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_money_entry_direction_occurred_on` ON `${TABLE_NAME}` (`direction`, `occurred_on`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "account",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "account_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "account",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `kind` TEXT NOT NULL, `currency_code` TEXT NOT NULL, `institution` TEXT, `opening_balance_minor` INTEGER NOT NULL, `annual_rate` REAL, `interest_posted_through` INTEGER, `interest_in_bs` INTEGER NOT NULL DEFAULT 0, `interest_payout_months` INTEGER, `deposit_started_on` INTEGER, `deposit_term_months` INTEGER, `matures_into_account_id` TEXT, `maturity_amount_minor` INTEGER, `premium_minor` INTEGER, `premium_every_months` INTEGER, `premium_series_id` TEXT, `plan_recur_in_bs` INTEGER NOT NULL DEFAULT 0, `color_argb` INTEGER NOT NULL, `show_in_display_currency` INTEGER NOT NULL DEFAULT 0, `sort_order` INTEGER NOT NULL, `is_archived` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currencyCode",
+            "columnName": "currency_code",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "institution",
+            "columnName": "institution",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "openingBalanceMinor",
+            "columnName": "opening_balance_minor",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "annualRate",
+            "columnName": "annual_rate",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "interestPostedThrough",
+            "columnName": "interest_posted_through",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "interestInBs",
+            "columnName": "interest_in_bs",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "interestPayoutMonths",
+            "columnName": "interest_payout_months",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "depositStartedOn",
+            "columnName": "deposit_started_on",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "depositTermMonths",
+            "columnName": "deposit_term_months",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "maturesIntoAccountId",
+            "columnName": "matures_into_account_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "maturityAmountMinor",
+            "columnName": "maturity_amount_minor",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "premiumMinor",
+            "columnName": "premium_minor",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "premiumEveryMonths",
+            "columnName": "premium_every_months",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "premiumSeriesId",
+            "columnName": "premium_series_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "planRecurInBs",
+            "columnName": "plan_recur_in_bs",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "colorArgb",
+            "columnName": "color_argb",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "showInDisplayCurrency",
+            "columnName": "show_in_display_currency",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sort_order",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isArchived",
+            "columnName": "is_archived",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deletedAt",
+            "columnName": "deletedAt",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_account_deletedAt",
+            "unique": false,
+            "columnNames": [
+              "deletedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_account_deletedAt` ON `${TABLE_NAME}` (`deletedAt`)"
+          },
+          {
+            "name": "index_account_sort_order",
+            "unique": false,
+            "columnNames": [
+              "sort_order"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_account_sort_order` ON `${TABLE_NAME}` (`sort_order`)"
+          }
+        ]
+      },
+      {
+        "tableName": "fx_rate",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`base_code` TEXT NOT NULL, `quote_code` TEXT NOT NULL, `rate` REAL NOT NULL, `fetched_at` INTEGER NOT NULL, PRIMARY KEY(`base_code`, `quote_code`))",
+        "fields": [
+          {
+            "fieldPath": "baseCode",
+            "columnName": "base_code",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quoteCode",
+            "columnName": "quote_code",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rate",
+            "columnName": "rate",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fetchedAt",
+            "columnName": "fetched_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "base_code",
+            "quote_code"
+          ]
+        }
+      },
+      {
+        "tableName": "recurring_series",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `amount_minor` INTEGER NOT NULL, `currency_code` TEXT NOT NULL, `direction` TEXT NOT NULL, `interval` TEXT NOT NULL, `interval_months` INTEGER, `start_on` INTEGER NOT NULL, `end_on` INTEGER, `materialised_through` INTEGER, `account_id` TEXT, `transfer_to_account_id` TEXT, `is_adjustment` INTEGER NOT NULL DEFAULT 0, `recur_in_bs` INTEGER NOT NULL DEFAULT 0, `uses_selected_calendar` INTEGER NOT NULL DEFAULT 0, `note` TEXT, `is_paused` INTEGER NOT NULL DEFAULT 0, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`account_id`) REFERENCES `account`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amountMinor",
+            "columnName": "amount_minor",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currencyCode",
+            "columnName": "currency_code",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "direction",
+            "columnName": "direction",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "interval",
+            "columnName": "interval",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "intervalMonths",
+            "columnName": "interval_months",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "startOn",
+            "columnName": "start_on",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endOn",
+            "columnName": "end_on",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "materialisedThrough",
+            "columnName": "materialised_through",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "accountId",
+            "columnName": "account_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "transferToAccountId",
+            "columnName": "transfer_to_account_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isAdjustment",
+            "columnName": "is_adjustment",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "recurInBs",
+            "columnName": "recur_in_bs",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "usesSelectedCalendar",
+            "columnName": "uses_selected_calendar",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isPaused",
+            "columnName": "is_paused",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deletedAt",
+            "columnName": "deletedAt",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_recurring_series_deletedAt",
+            "unique": false,
+            "columnNames": [
+              "deletedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recurring_series_deletedAt` ON `${TABLE_NAME}` (`deletedAt`)"
+          },
+          {
+            "name": "index_recurring_series_account_id",
+            "unique": false,
+            "columnNames": [
+              "account_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recurring_series_account_id` ON `${TABLE_NAME}` (`account_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "account",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "account_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "loan",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `kind` TEXT NOT NULL, `lender` TEXT, `loan_direction` TEXT NOT NULL DEFAULT 'BORROWED', `instalment_style` TEXT NOT NULL DEFAULT 'LEVEL_EMI', `principal_minor` INTEGER NOT NULL, `credit_limit_minor` INTEGER, `currency_code` TEXT NOT NULL, `annual_rate` REAL, `term_months` INTEGER, `payment_every_months` INTEGER NOT NULL DEFAULT 1, `emi_minor` INTEGER, `emi_starts_on` INTEGER, `disbursed_on` INTEGER, `carried_interest_minor` INTEGER NOT NULL DEFAULT 0, `recur_in_bs` INTEGER NOT NULL DEFAULT 0, `due_on` INTEGER, `pay_from_account_id` TEXT, `disbursed_account_id` TEXT, `advanced_minor` INTEGER, `series_id` TEXT, `started_on` INTEGER NOT NULL, `show_in_display_currency` INTEGER NOT NULL DEFAULT 0, `is_closed` INTEGER NOT NULL DEFAULT 0, `note` TEXT, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`pay_from_account_id`) REFERENCES `account`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lender",
+            "columnName": "lender",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "loanDirection",
+            "columnName": "loan_direction",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'BORROWED'"
+          },
+          {
+            "fieldPath": "instalmentStyle",
+            "columnName": "instalment_style",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'LEVEL_EMI'"
+          },
+          {
+            "fieldPath": "principalMinor",
+            "columnName": "principal_minor",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "creditLimitMinor",
+            "columnName": "credit_limit_minor",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "currencyCode",
+            "columnName": "currency_code",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "annualRate",
+            "columnName": "annual_rate",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "termMonths",
+            "columnName": "term_months",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "paymentEveryMonths",
+            "columnName": "payment_every_months",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "1"
+          },
+          {
+            "fieldPath": "emiMinor",
+            "columnName": "emi_minor",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "emiStartsOn",
+            "columnName": "emi_starts_on",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "disbursedOn",
+            "columnName": "disbursed_on",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "carriedInterestMinor",
+            "columnName": "carried_interest_minor",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "recurInBs",
+            "columnName": "recur_in_bs",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "dueOn",
+            "columnName": "due_on",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "payFromAccountId",
+            "columnName": "pay_from_account_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "disbursedAccountId",
+            "columnName": "disbursed_account_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "advancedMinor",
+            "columnName": "advanced_minor",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "seriesId",
+            "columnName": "series_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "startedOn",
+            "columnName": "started_on",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "showInDisplayCurrency",
+            "columnName": "show_in_display_currency",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "isClosed",
+            "columnName": "is_closed",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deletedAt",
+            "columnName": "deletedAt",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_loan_deletedAt",
+            "unique": false,
+            "columnNames": [
+              "deletedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_loan_deletedAt` ON `${TABLE_NAME}` (`deletedAt`)"
+          },
+          {
+            "name": "index_loan_pay_from_account_id",
+            "unique": false,
+            "columnNames": [
+              "pay_from_account_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_loan_pay_from_account_id` ON `${TABLE_NAME}` (`pay_from_account_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "account",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "pay_from_account_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "rate_change",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `account_id` TEXT, `loan_id` TEXT, `annual_rate` REAL NOT NULL, `effective_from` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`account_id`) REFERENCES `account`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accountId",
+            "columnName": "account_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "loanId",
+            "columnName": "loan_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "annualRate",
+            "columnName": "annual_rate",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "effectiveFrom",
+            "columnName": "effective_from",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deletedAt",
+            "columnName": "deletedAt",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_rate_change_account_id",
+            "unique": false,
+            "columnNames": [
+              "account_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_rate_change_account_id` ON `${TABLE_NAME}` (`account_id`)"
+          },
+          {
+            "name": "index_rate_change_loan_id",
+            "unique": false,
+            "columnNames": [
+              "loan_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_rate_change_loan_id` ON `${TABLE_NAME}` (`loan_id`)"
+          },
+          {
+            "name": "index_rate_change_deletedAt",
+            "unique": false,
+            "columnNames": [
+              "deletedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_rate_change_deletedAt` ON `${TABLE_NAME}` (`deletedAt`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "account",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "account_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a9f74b534146b155cd0c5a4c94e4a6fe')"
+    ]
+  }
+}

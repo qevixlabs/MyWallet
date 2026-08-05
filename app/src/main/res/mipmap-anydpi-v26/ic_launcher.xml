@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The launcher icon. minSdk is 26, so this adaptive icon is the only one there
+  needs to be — there are no legacy square PNGs to keep in step with it.
+
+  The `-v26` on the folder stays despite lint calling it unnecessary at minSdk 26:
+  dropped, the resource merger stops producing `mipmap/ic_launcher` at all and the
+  manifest cannot resolve its own icon.
+
+  The foreground is the artwork, drawn inside the 72dp the platform guarantees is
+  visible whatever mask the launcher applies. The monochrome layer is a flat
+  wallet glyph rather than the same artwork: a themed icon is drawn from alpha
+  alone, and an illustration with highlights and a shadow reduces to a smudge.
+-->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@drawable/ic_launcher_background" />
+    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+    <monochrome android:drawable="@drawable/ic_launcher_mono" />
+</adaptive-icon>
