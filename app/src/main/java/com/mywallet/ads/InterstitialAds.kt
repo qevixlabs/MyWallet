@@ -58,7 +58,9 @@ object AdIds {
  * Nothing here initialises the SDK on launch. [preload] is the first thing that
  * touches it, and the caller only reaches [preload] once it has decided ads are
  * allowed at all — so a phone being set up for the first time makes no ad
- * request, and neither does one still being shown the opening lessons.
+ * request, and neither does one still being shown the opening lessons. Nor does
+ * [preload] start the SDK itself any more: [AdConsent] stands in front of it,
+ * and on a phone that has refused consent the SDK is never started at all.
  *
  * [AdConfig.ENABLED] is checked in both public entry points rather than at the
  * call sites: a switch that has to be remembered at four different places is a
@@ -104,37 +106,54 @@ object InterstitialAds {
         private set
 
     /**
-     * Fetches one if there is nothing waiting, initialising the SDK on the way
-     * if this is the first time.
+     * Fetches one if there is nothing waiting, gathering consent and starting
+     * the SDK on the way if this is the first time.
      *
      * Cheap to call repeatedly — an ad already held, or a request already in
      * flight, is left alone.
+     *
+     * Takes an [Activity] rather than a [Context] because [AdConsent] may have
+     * to put a form on the screen, and there is nowhere to put one without it.
+     * Every caller had one to hand already.
      */
-    fun preload(context: Context) {
+    fun preload(activity: Activity) {
         if (!AdConfig.ENABLED) return
-        val app = context.applicationContext
-        if (started.compareAndSet(false, true)) {
-            // Before the SDK starts, never after: the configuration decides what
-            // the *first* request is answered with, and a phone told about it
-            // afterwards has already had one real ad served to it. See
-            // [AdConfig.TEST_DEVICES] for why this ships rather than being
-            // stripped out.
-            MobileAds.setRequestConfiguration(
-                RequestConfiguration.Builder()
-                    .setTestDeviceIds(AdConfig.TEST_DEVICES)
-                    .build()
-            )
-            MobileAds.initialize(app) {
-                ready = true
-                // Only now is there anything to load through — see [ready].
-                fetch(app)
-            }
+        val app = activity.applicationContext
+        if (!ready) {
+            // Consent first and always, even on the launches where it turns out
+            // there was nothing to ask: [AdConsent.gather] is what decides that,
+            // not this. It calls back at once where no form is owed, so the
+            // usual phone loses nothing by going the long way round.
+            AdConsent.gather(activity) { startSdk(app) }
             return
         }
-        // Still starting up. Its callback fetches, so asking again here would
-        // either be ignored or waste a request.
-        if (!ready) return
         fetch(app)
+    }
+
+    /**
+     * Starts the SDK, once, after [AdConsent] has said ads may be requested.
+     *
+     * Guarded rather than trusted to be called once: consent can report itself
+     * ready twice — from the cache and again from the form — and initialising
+     * the SDK twice is not allowed.
+     */
+    private fun startSdk(app: Context) {
+        if (!started.compareAndSet(false, true)) return
+        // Before the SDK starts, never after: the configuration decides what
+        // the *first* request is answered with, and a phone told about it
+        // afterwards has already had one real ad served to it. See
+        // [AdConfig.TEST_DEVICES] for why this ships rather than being
+        // stripped out.
+        MobileAds.setRequestConfiguration(
+            RequestConfiguration.Builder()
+                .setTestDeviceIds(AdConfig.TEST_DEVICES)
+                .build()
+        )
+        MobileAds.initialize(app) {
+            ready = true
+            // Only now is there anything to load through — see [ready].
+            fetch(app)
+        }
     }
 
     private fun fetch(app: Context) {

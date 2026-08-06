@@ -9,12 +9,14 @@
       says that outright rather than leaving a MissingTranslation error in
       every lint run for somebody to learn to ignore.
 
-      Nothing reads it: the launcher label comes from the `appLabel` manifest
-      placeholder, which each build type sets so a debug install is obvious
-      beside a real one. Kept because it is the app's name and the first thing
+      Nothing reads it. The names on a phone come from two manifest placeholders
+      set per build type in build.gradle.kts — `appLabel` for Settings and app
+      info, `launcherLabel` for the icon caption, where the short "MyMoney
+      Tracker" survives a launcher that only gives you a line of ten characters.
+      This is the spoken name, the one a sentence would use, and the first thing
       anything new would reach for.
     -->
-    <string name="app_name" translatable="false">My Wallet</string>
+    <string name="app_name" translatable="false">My Money Tracker</string>
 
     <!-- Bottom navigation -->
     <string name="nav_home">Home</string>
@@ -131,7 +133,7 @@
     <string name="settings_lock_disable">Disable app lock</string>
     <string name="settings_lock_explain">Use your device lock to protect the app.</string>
     <string name="settings_lock_unavailable">Set a screen lock on your phone first.</string>
-    <string name="lock_title">My Wallet is locked</string>
+    <string name="lock_title">My Money Tracker is locked</string>
     <string name="lock_subtitle">Unlock to see your money</string>
     <!-- Asked before the switch is saved, not after: the question here is
          whether this phone's lock can be got past at all, which is a different
@@ -144,12 +146,12 @@
          afterwards. The setup_lock_* four are the sheet that comes up from the
          bottom a while later — a suggestion made over a page of the user's own
          money, not a question standing between them and it. -->
-    <string name="setup_title">Welcome to My Wallet</string>
+    <string name="setup_title">Welcome to My Money Tracker</string>
     <string name="setup_subtitle">A few things first, so the app reads the way you do.</string>
     <string name="setup_continue">Continue</string>
     <string name="setup_changeable">You can change any of this later in Settings.</string>
     <string name="setup_lock_title">Do you want to enable App Lock?</string>
-    <string name="setup_lock_body">Use your fingerprint, face or screen lock to open My Wallet. Nothing new to remember — it asks for what your phone already has.</string>
+    <string name="setup_lock_body">Use your fingerprint, face or screen lock to open My Money Tracker. Nothing new to remember — it asks for what your phone already has.</string>
     <string name="setup_lock_enable">Turn on lock</string>
     <string name="setup_lock_skip">Skip</string>
     <!-- Said once, on the accounts page, with a finger pointed at the button
@@ -190,10 +192,19 @@
         <item quantity="other">%1$d accounts, debts and rules</item>
     </plurals>
     <string name="settings_restore_failed">Could not read that backup</string>
-    <string name="settings_restore_too_new">This backup was made by a newer version of My Wallet. Update the app first.</string>
+    <string name="settings_restore_too_new">This backup was made by a newer version of My Money Tracker. Update the app first.</string>
     <string name="settings_erased">Everything deleted</string>
     <string name="settings_about">About</string>
     <string name="settings_version">Version %1$s</string>
+
+    <!--
+      Ads. This whole section is shown only where consent was asked for in the
+      first place — the EEA, the UK and Switzerland — so most people never see
+      it. See ads/AdConsent.kt.
+    -->
+    <string name="settings_ads">Ads</string>
+    <string name="settings_ads_explain">You chose what this app may use your data for when ads are shown. You can change that here.</string>
+    <string name="settings_ads_privacy">Change your ad choices</string>
 
     <!-- Backup frequency -->
     <string name="backup_off">Off</string>
@@ -239,18 +250,23 @@
          because a policy and a goal both take money in every month and the
          difference is the whole reason someone hesitates here. -->
     <string name="add_holding_bank">Account, deposit, loan or card</string>
-    <string name="add_holding_wallet">eSewa, Khalti, Wise…</string>
+    <string name="add_holding_wallet">A digital wallet or payment app</string>
     <string name="add_holding_cash">Money in hand</string>
     <string name="add_holding_person">Money you lent or borrowed</string>
     <string name="add_holding_insurance">A policy you pay premiums on</string>
     <string name="add_holding_goal">Money put aside for something</string>
     <string name="accounts_edit">Edit account</string>
+    <!--
+         No *_hint beside these any more. The label already says what the box
+         wants, so an invented example under it ("Global IME, Nabil…") only ever
+         added two things: somebody else's brand printed inside our app, and a
+         suggestion nobody asked for. What the empty box shows now is the names
+         the user has already used — see `namePlaceholder` in
+         HoldingEditorScreen.kt — or nothing at all when there are none.
+    -->
     <string name="accounts_name">Name</string>
-    <string name="accounts_name_hint">Cash, Pocket money…</string>
     <string name="accounts_bank_name">Bank name</string>
-    <string name="accounts_bank_name_hint">Global IME, Nabil…</string>
     <string name="accounts_wallet_name">Wallet name</string>
-    <string name="accounts_wallet_name_hint">eSewa, Khalti, Wise…</string>
     <string name="accounts_kind">What is it?</string>
     <string name="accounts_kind_bank">Bank</string>
     <string name="accounts_kind_savings">Savings</string>
@@ -281,7 +297,6 @@
          back, what you pay, how often, and when it ends. -->
     <string name="accounts_kind_insurance">Insurance</string>
     <string name="insurance_policy_name">Policy name</string>
-    <string name="insurance_policy_name_hint">Life, endowment, education…</string>
     <string name="insurance_maturity_amount">Maturity amount</string>
     <string name="insurance_premium">Premium</string>
     <string name="insurance_started_on">Start date</string>
@@ -317,7 +332,6 @@
          fell in among the cash. -->
     <string name="accounts_wallets">Wallets</string>
     <string name="goal_name">Name</string>
-    <string name="goal_name_hint">Nepal trip, new laptop…</string>
     <string name="goal_amount">Goal amount</string>
     <string name="goal_put_aside">Your saving each time</string>
     <string name="goal_started_on">Start date</string>
@@ -450,7 +464,6 @@
     <string name="loan_term_months">Months</string>
     <string name="loan_term_years">Years</string>
     <string name="loan_person_name">Person’s name</string>
-    <string name="loan_person_name_hint">A friend or family member</string>
     <string name="loan_pay_every">Pay every?</string>
     <string name="loan_pay_at_end">At the end</string>
     <string name="loan_pay_at_end_explain">No instalments. The loan and all its interest are paid in one go on the day the term runs out.</string>

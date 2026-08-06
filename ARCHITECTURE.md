@@ -1281,7 +1281,13 @@ Interest-only payments must leave the balance exactly where it was — that is t
 
 **`AdConfig.ENABLED` is the switch, and it is on.** With it false nothing is requested, the SDK is not started, and no rule below runs — which is what makes the app walkable: an interstitial arriving part way through a form costs the walk, and every screenshot taken with one on it has to be taken again. Turn it off for any session like that. It is checked inside `InterstitialAds` itself as well as at the trigger, because a switch that has to be remembered at four call sites will one day be forgotten at one of them. What it does *not* switch off is the account risk: the ids are real, so an ad served to a phone this repo is developed on is a real impression and a tap on it is invalid traffic. The emulator is a test device automatically; a real phone is not, so the developer's own phone is named in `AdConfig.TEST_DEVICES` and the configuration is set **before** `MobileAds.initialize` — a device told about it afterwards has already had one real ad served to it. That list ships rather than being stripped out before release, because the phone this is tried on runs the shipped build: there is no build type to hide it behind, and one id costs everybody else nothing.
 
-**"Account not approved yet" is not a bug.** A newly registered unit answers `Ad failed to load : 3` with those words until the app is linked to a store listing and passes AdMob's app-readiness review — nothing in this repo can shorten that.
+**Consent comes before the SDK, not after it.** Play ships this app to every country it is not withheld from, and in the EEA, the UK and Switzerland an ad served with no consent record is a policy breach the *account* answers for. `user-messaging-platform` is a separate dependency from the ads SDK — it is not pulled in transitively, so the two are listed together in `libs.versions.toml` and `AdConsent` is the whole of what the second one is for. `InterstitialAds.preload` therefore no longer starts the SDK itself: it hands to `AdConsent.gather`, and `MobileAds.initialize` runs from that callback, only once `canRequestAds()` is true. On a phone whose owner refused, the SDK is never started at all.
+
+This is invisible where it matters least and untestable where it matters most. Outside those regions there is no form to load, `gather` finds it can request ads on the first call and hands straight back — so nearly every user of this app, and the developer's own phone, see nothing and prove nothing. Use `ConsentDebugSettings` with a hashed device id and `DEBUG_GEOGRAPHY_EEA` when the form itself needs looking at. `gather` may call back immediately, or after a form is dismissed, or twice, or never; `startSdk` guards itself with a `compareAndSet` for that reason, and callers must be safe to enter more than once.
+
+**The form has to exist in the console or none of it works.** With no published European-regulations message, UMP answers `Publisher misconfiguration: ... no form(s) configured for the input app ID` — the app is correct and the account is not. Publishing that message needs a privacy policy URL on the app in AdMob.
+
+**"Account not approved yet" is not a bug.** A newly registered unit answers `Ad failed to load : 3` with those words until the app is linked to a store listing and passes AdMob's app-readiness review. The listing was linked on 6 Aug 2026 — a closed test is enough for AdMob to find it, the production track is not required — and the review is what remains; nothing in this repo can shorten it.
 
 **It is raised by leaving a screen, not by standing still.** The trigger used to be idleness — the user at rest on a tab for eight seconds — and idleness is a poor proxy for "finished": somebody reading down their own timeline is at rest, and an ad arrived under a moving thumb three times while that was being tested. What replaces it is **backing out onto a tab** (`WalletApp.onLeftScreen`: anything that is not a top-level destination is a screen the user opened on purpose, so coming back out of one is a piece of work finished) and **the app coming back to the front**, which waits `AdConfig.AFTER_RESUME_MS` first — never in the frame the app returns in, where a full-screen ad reads as the app having been replaced rather than as an ad.
 
@@ -1355,11 +1361,40 @@ Several earlier attempts are why it looks like this: a *green* wallet on the app
 dark green left nothing to see at launcher size, a brown one filling the tile was
 busier than an icon should be, and a flat white tile was flat.
 
-**The app is called "My Wallet"** — two words, and what the launcher shows comes
-from the `appLabel` manifest placeholder rather than from `app_name`, so each
-build type can say its own (a debug install beside a real one is meant to be
-obvious). `app_name` is therefore unreferenced today and kept anyway, being the
-app's name and the first thing anything new would reach for.
+**The app is called "My Money Tracker"**, and it wears three names because the
+three places it appears have different room:
+
+| Where | Name | Set by |
+| --- | --- | --- |
+| Play Store listing | My Money Tracker | typed into the console, not built from the APK |
+| Settings, app info, notifications | My Money Tracker | `appLabel` placeholder → `<application android:label>` |
+| Icon caption, recents card | MyMoney Tracker | `launcherLabel` placeholder → `MainActivity android:label` |
+
+A launcher gives a caption about ten characters a line and breaks it at spaces,
+so "My Money Tracker" arrives there as "My Money" with the rest cut. Closing the
+one gap keeps the name whole under the icon without costing the spaced form
+anywhere it fits — including the store title, where the exact phrase people
+search for has to survive. The activity label shadows the application one and
+*only* the launcher and recents read it; that is the whole reason for the split.
+
+Both are manifest placeholders rather than `app_name` so each build type can say
+its own — a debug install beside a real one is meant to be obvious. The debug
+launcher label is "MyMoney debug", not "MyMoney Tracker debug", because the same
+ten-character line would drop the one word that tells them apart.
+
+`app_name` is therefore unreferenced today and kept anyway, being the spoken name
+and the first thing anything new would reach for.
+
+**The old name, "My Wallet", is still all through the source and should stay
+there.** `com.mywallet` is the Kotlin package, not the `applicationId`, and
+`MyWalletApp`/`MyWalletDatabase`/`MyWalletTheme`/`Theme.MyWallet` are internal
+identifiers no user can see. Three of its appearances are load-bearing and
+renaming them breaks phones that already have the app: `applicationId
+com.qevixlabs.mywallet` (Play identity and the AdMob unit both bind to it),
+`MyWalletDatabase.NAME = "mywallet.db"` (rename it and every existing user opens
+an empty app), and the `MyWallet.apk` asset name, which `release.sh` writes and
+`UpdateChecker` fetches by literal URL — they have to agree or installed github
+builds stop finding updates.
 
 It is marked `translatable="false"`, because a product name is the same in both
 languages. That was for a long time the one `MissingTranslation` error the build

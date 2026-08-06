@@ -3753,7 +3753,7 @@ private fun NameField(
         value = state.name,
         onValueChange = viewModel::setName,
         label = { Text(stringResource(state.choice.nameLabelRes())) },
-        placeholder = { Text(stringResource(state.choice.nameHintRes())) },
+        placeholder = state.namePlaceholder()?.let { hint -> { Text(hint) } },
         singleLine = true,
         isError = state.nameError != null,
         supportingText = state.nameError?.let { { Text(stringResource(it)) } },
@@ -3818,7 +3818,7 @@ private fun BankNameField(state: HoldingEditorState, viewModel: HoldingEditorVie
             value = state.name,
             onValueChange = viewModel::setName,
             label = { Text(stringResource(state.choice.nameLabelRes())) },
-            placeholder = { Text(stringResource(state.choice.nameHintRes())) },
+            placeholder = state.namePlaceholder()?.let { hint -> { Text(hint) } },
             singleLine = true,
             isError = state.nameError != null,
             supportingText = state.nameError?.let { { Text(stringResource(it)) } },
@@ -3855,6 +3855,13 @@ private fun BankNameField(state: HoldingEditorState, viewModel: HoldingEditorVie
 
 /** How many banks the field offers before asking for another letter instead. */
 private const val MAX_BANK_SUGGESTIONS = 5
+
+/**
+ * How many known names fit in the empty box before it is a wall rather than a
+ * reminder. Fewer than the list below it offers on purpose: this one is a single
+ * line that ellipsises, and three is about what survives on a narrow phone.
+ */
+private const val MAX_NAME_PLACEHOLDERS = 3
 
 /** A settled date, drawn in whichever calendar the user reads. */
 @Composable
@@ -4652,14 +4659,28 @@ private fun HoldingChoice.nameLabelRes(): Int = when (group) {
     HoldingGroup.GOAL -> R.string.goal_name
 }
 
-private fun HoldingChoice.nameHintRes(): Int = when (group) {
-    HoldingGroup.BANK -> R.string.accounts_bank_name_hint
-    HoldingGroup.WALLET -> R.string.accounts_wallet_name_hint
-    HoldingGroup.CASH -> R.string.accounts_name_hint
-    HoldingGroup.PERSON -> R.string.loan_person_name_hint
-    HoldingGroup.INSURANCE -> R.string.insurance_policy_name_hint
-    HoldingGroup.GOAL -> R.string.goal_name_hint
-}
+/**
+ * What stands in the name box while it is empty, or null for nothing at all.
+ *
+ * It used to be an invented example per kind — "Global IME, Nabil…" over a bank,
+ * "eSewa, Khalti, Wise…" over a wallet. Two things wrong with that. It printed
+ * other people's brands inside the app, which is somebody else's name being used
+ * to describe our form; and it answered a question the label above had already
+ * asked plainly, so the reader paid a line of grey text to be told that a box
+ * marked *Bank name* wants the name of a bank.
+ *
+ * What is worth the space is what this user has already called things. Seeing
+ * "Nabil Bank" sitting in the empty box is how the second account there gets
+ * spelled the same way instead of becoming a second bank — the same reason
+ * [BankNameField] lists them underneath, said once more where the eye already
+ * is. Only banks and wallets have such a list; a cash tin, a person, a policy or
+ * a goal is one of itself, so the box is simply empty and the label carries it.
+ */
+private fun HoldingEditorState.namePlaceholder(): String? =
+    nameSuggestions
+        .take(MAX_NAME_PLACEHOLDERS)
+        .takeIf { it.isNotEmpty() }
+        ?.joinToString(", ")
 
 /**
  * The unit a gap between payments is counted in.

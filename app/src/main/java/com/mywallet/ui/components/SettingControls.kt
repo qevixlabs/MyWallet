@@ -28,6 +28,7 @@ import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.PrivacyTip
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Translate
@@ -124,6 +125,7 @@ private fun iconFor(@StringRes title: Int): ImageVector? = when (title) {
     R.string.settings_reminders -> Icons.Outlined.Schedule
     R.string.settings_lock -> Icons.Outlined.Lock
     R.string.settings_backup -> Icons.Outlined.Inventory2
+    R.string.settings_ads -> Icons.Outlined.PrivacyTip
     R.string.settings_about -> Icons.Outlined.Info
     R.string.settings_start_over -> Icons.Outlined.RestartAlt
     else -> null

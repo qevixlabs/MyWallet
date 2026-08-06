@@ -59,6 +59,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mywallet.BuildConfig
+import com.mywallet.ads.AdConsent
 import androidx.compose.material3.Switch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
@@ -420,6 +421,14 @@ fun SettingsScreen(
 
     var confirmErase by remember { mutableStateOf(false) }
 
+    // Asked when the screen opens rather than relied on from whenever an ad was
+    // last fetched: the flag lives for one process and the answer behind it does
+    // not, so somebody who reaches Settings before anything has asked for an ad
+    // would otherwise be shown nothing on a phone that is owed the row.
+    val context = LocalContext.current
+    val adChoicesOffered by AdConsent.privacyOptionsRequired.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) { AdConsent.refresh(context) }
+
     LazyColumn(
         modifier = modifier.fillMaxWidth(),
         contentPadding = contentPadding,
@@ -744,6 +753,26 @@ fun SettingsScreen(
                 }
                 ActionRow(stringResource(R.string.settings_backup_restore)) {
                     restoreLauncher.launch(arrayOf("application/json", "*/*"))
+                }
+            }
+        }
+
+        // Only where an answer was asked for, which is only the EEA, the UK and
+        // Switzerland — [AdConsent.privacyOptionsRequired] is what decides, not
+        // anything guessed here. Everywhere else this section does not exist,
+        // and a row that opened nothing would be worse than no row.
+        if (adChoicesOffered) {
+            item {
+                SettingsGroup(title = R.string.settings_ads) {
+                    Text(
+                        text = stringResource(R.string.settings_ads_explain),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    ActionRow(stringResource(R.string.settings_ads_privacy)) {
+                        AdConsent.showPrivacyOptions(context)
+                    }
                 }
             }
         }

@@ -15,6 +15,7 @@ documentfile = "1.1.0"
 nepaliDatePicker = "2.6.2"
 biometric = "1.1.0"
 playServicesAds = "25.4.0"
+userMessagingPlatform = "4.0.0"
 
 room = "2.8.4"
 datastore = "1.2.1"
@@ -49,9 +50,13 @@ androidx-documentfile = { group = "androidx.documentfile", name = "documentfile"
 # Bikram Sambat date picker, Material3-aligned. MPL-2.0.
 nepali-date-picker = { group = "io.github.shivathapaa", name = "nepali-date-picker-android", version.ref = "nepaliDatePicker" }
 androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }
-# Google Mobile Ads. Currently pointed at Google's own *test* ad units — see
-# `ads/InterstitialAds.kt` — so nothing here needs an AdMob account to run.
+# Google Mobile Ads, pointed at this app's own ad unit — see `ads/AdIds`.
 play-services-ads = { group = "com.google.android.gms", name = "play-services-ads", version.ref = "playServicesAds" }
+# The consent form the ads above are not allowed to serve without in the EEA,
+# the UK and Switzerland. Not a transitive dependency of the ads SDK: without
+# this line `ads/AdConsent.kt` does not compile, which is the point — the two
+# arrive together or not at all.
+user-messaging-platform = { group = "com.google.android.ump", name = "user-messaging-platform", version.ref = "userMessagingPlatform" }
 
 # Persistence
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }

@@ -31,9 +31,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MyWallet">
 
+        <!--
+          The label here shadows the application one for the icon caption and the
+          recents card, and nowhere else — see the two placeholders in
+          build.gradle.kts for which name belongs where.
+        -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:label="${launcherLabel}"
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.MyWallet">
             <intent-filter>

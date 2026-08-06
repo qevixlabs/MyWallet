@@ -70,7 +70,7 @@ git tag -f "$TAG"
 git push origin main --tags --force-with-lease
 
 gh release create "$TAG" "$OUT" latest.json \
-  --title "My Wallet ${VERSION_NAME}" \
+  --title "My Money Tracker ${VERSION_NAME}" \
   --notes "${1:-Maintenance release.}" \
   || gh release upload "$TAG" "$OUT" latest.json --clobber
 

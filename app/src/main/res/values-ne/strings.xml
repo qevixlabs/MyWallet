@@ -84,16 +84,16 @@
     <string name="settings_lock_disable">एप ताला हटाउनुहोस्</string>
     <string name="settings_lock_explain">एप जोगाउन फोनकै लक प्रयोग गर्नुहोस्।</string>
     <string name="settings_lock_unavailable">पहिले फोनमा स्क्रिन लक राख्नुहोस्।</string>
-    <string name="lock_title">माइवालेट लक छ</string>
+    <string name="lock_title">माई मनी ट्र्याकर लक छ</string>
     <string name="lock_subtitle">पैसा हेर्न अनलक गर्नुहोस्</string>
     <string name="lock_subtitle_confirm">यो सुरु गर्न आफ्नो ताला पुष्टि गर्नुहोस्</string>
     <string name="lock_unlock">अनलक</string>
-    <string name="setup_title">माई वालेटमा स्वागत छ</string>
+    <string name="setup_title">माई मनी ट्र्याकरमा स्वागत छ</string>
     <string name="setup_subtitle">सुरु गर्नुअघि केही कुरा — एप तपाईंले पढ्ने तरिकामै देखियोस्।</string>
     <string name="setup_continue">अगाडि बढ्नुहोस्</string>
     <string name="setup_changeable">यी सबै पछि सेटिङबाट बदल्न सकिन्छ।</string>
     <string name="setup_lock_title">के तपाईं एप ताला सुरु गर्न चाहनुहुन्छ?</string>
-    <string name="setup_lock_body">माई वालेट खोल्न औंठाछाप, अनुहार वा स्क्रिन लक प्रयोग गर्नुहोस्। नयाँ केही सम्झनु पर्दैन — फोनमा भएकै ताला सोधिन्छ।</string>
+    <string name="setup_lock_body">माई मनी ट्र्याकर खोल्न औंठाछाप, अनुहार वा स्क्रिन लक प्रयोग गर्नुहोस्। नयाँ केही सम्झनु पर्दैन — फोनमा भएकै ताला सोधिन्छ।</string>
     <string name="setup_lock_enable">ताला लगाउनुहोस्</string>
     <string name="setup_lock_skip">छोड्नुहोस्</string>
     <string name="hint_first_account_title">पहिलो खाता थप्नुहोस्</string>
@@ -121,10 +121,14 @@
         <item quantity="other">%1$d खाता, ऋण र नियम</item>
     </plurals>
     <string name="settings_restore_failed">त्यो ब्याकअप पढ्न सकिएन</string>
-    <string name="settings_restore_too_new">यो ब्याकअप माइवालेटको नयाँ संस्करणले बनाएको हो। पहिले एप अपडेट गर्नुहोस्।</string>
+    <string name="settings_restore_too_new">यो ब्याकअप माई मनी ट्र्याकरको नयाँ संस्करणले बनाएको हो। पहिले एप अपडेट गर्नुहोस्।</string>
     <string name="settings_erased">सबै मेटियो</string>
     <string name="settings_about">बारेमा</string>
     <string name="settings_version">संस्करण %1$s</string>
+
+    <string name="settings_ads">विज्ञापन</string>
+    <string name="settings_ads_explain">विज्ञापन देखाउँदा यो एपले तपाईंको डेटा केका लागि प्रयोग गर्न पाउँछ भन्ने तपाईंले रोज्नुभएको थियो। त्यो यहाँबाट बदल्न सकिन्छ।</string>
+    <string name="settings_ads_privacy">विज्ञापन छनोट बदल्नुहोस्</string>
 
     <string name="backup_off">बन्द</string>
     <string name="backup_daily">हरेक दिन</string>
@@ -155,18 +159,15 @@
     <string name="accounts_add_insurance">बिमा खाता थप्नुहोस्</string>
     <string name="accounts_add_goal">लक्ष्य खाता थप्नुहोस्</string>
     <string name="add_holding_bank">खाता, मुद्दती, ऋण वा कार्ड</string>
-    <string name="add_holding_wallet">इसेवा, खल्ती, वाइज…</string>
+    <string name="add_holding_wallet">डिजिटल वालेट वा भुक्तानी एप</string>
     <string name="add_holding_cash">हातमा भएको पैसा</string>
     <string name="add_holding_person">तपाईंले दिनुभएको वा लिनुभएको पैसा</string>
     <string name="add_holding_insurance">प्रिमियम तिर्ने बिमा</string>
     <string name="add_holding_goal">केही कुराका लागि छुट्याएको पैसा</string>
     <string name="accounts_edit">खाता सम्पादन</string>
     <string name="accounts_name">नाम</string>
-    <string name="accounts_name_hint">नगद, खल्तीको पैसा…</string>
     <string name="accounts_bank_name">बैंकको नाम</string>
-    <string name="accounts_bank_name_hint">ग्लोबल आईएमई, नबिल…</string>
     <string name="accounts_wallet_name">वालेटको नाम</string>
-    <string name="accounts_wallet_name_hint">इसेवा, खल्ती, वाइज…</string>
     <string name="accounts_kind">यो के हो?</string>
     <string name="accounts_kind_bank">बैंक</string>
     <string name="accounts_kind_savings">बचत</string>
@@ -187,7 +188,6 @@
     <string name="fd_row_matures">निक्षेप चलाउन पाइने भयो</string>
     <string name="accounts_kind_insurance">बिमा</string>
     <string name="insurance_policy_name">बिमाको नाम</string>
-    <string name="insurance_policy_name_hint">जीवन, शिक्षा, अवधि…</string>
     <string name="insurance_maturity_amount">परिपक्व रकम</string>
     <string name="insurance_premium">प्रिमियम</string>
     <string name="insurance_started_on">सुरु मिति</string>
@@ -210,7 +210,6 @@
     <string name="accounts_goals">लक्ष्यहरू</string>
     <string name="accounts_wallets">वालेटहरू</string>
     <string name="goal_name">नाम</string>
-    <string name="goal_name_hint">नेपाल घुम्ने, नयाँ ल्यापटप…</string>
     <string name="goal_amount">लक्ष्य रकम</string>
     <string name="goal_put_aside">तपाईंको हरेक पटकको बचत</string>
     <string name="goal_started_on">सुरु मिति</string>
@@ -309,7 +308,6 @@
     <string name="loan_term_months">महिना</string>
     <string name="loan_term_years">वर्ष</string>
     <string name="loan_person_name">व्यक्तिको नाम</string>
-    <string name="loan_person_name_hint">साथी वा परिवारको सदस्य</string>
     <string name="loan_pay_every">कति-कति समयमा तिर्ने?</string>
     <string name="loan_pay_at_end">अन्त्यमा एकैपटक</string>
     <string name="loan_pay_at_end_explain">किस्ता हुँदैन। अवधि सकिने दिन साँवा र सम्पूर्ण ब्याज एकै पटक तिरिन्छ।</string>

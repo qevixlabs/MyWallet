@@ -58,8 +58,8 @@ android {
         applicationId = "com.qevixlabs.mywallet"
         minSdk = 26
         targetSdk = 36
-        versionCode = 208
-        versionName = "1.0"
+        versionCode = 209
+        versionName = "1.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
@@ -112,15 +112,27 @@ android {
     }
 
     buildTypes {
+        // Two labels, because the two places they show up have different room.
+        // `appLabel` is the application label — Settings, app info, notification
+        // attribution — where a sentence-shaped name reads properly. `launcherLabel`
+        // overrides it on MainActivity only, which is the caption under the icon and
+        // the recents card, where a launcher gives you about ten characters a line
+        // and breaks at spaces. Closing the gap in "MyMoney" keeps the name whole
+        // there. Neither is the Play Store title: that one is typed into the console
+        // and stays "My Money Tracker", so the phrase people search for is intact.
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
             // Distinct launcher name so a debug build sitting next to the real
-            // one on a phone is obvious rather than a second identical icon.
-            manifestPlaceholders["appLabel"] = "My Wallet debug"
+            // one on a phone is obvious rather than a second identical icon. The
+            // short form matters more here than the full name: "MyMoney Tracker
+            // debug" would push the one word that tells them apart off the end.
+            manifestPlaceholders["appLabel"] = "My Money Tracker debug"
+            manifestPlaceholders["launcherLabel"] = "MyMoney debug"
         }
         release {
-            manifestPlaceholders["appLabel"] = "My Wallet"
+            manifestPlaceholders["appLabel"] = "My Money Tracker"
+            manifestPlaceholders["launcherLabel"] = "MyMoney Tracker"
             // Falls back to unsigned when keystore.properties is absent.
             signingConfig = if (keystoreProperties.getProperty("storeFile") != null) {
                 signingConfigs.getByName("release")
@@ -173,6 +185,7 @@ dependencies {
     implementation(libs.nepali.date.picker)
     implementation(libs.androidx.biometric)
     implementation(libs.play.services.ads)
+    implementation(libs.user.messaging.platform)
 
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
