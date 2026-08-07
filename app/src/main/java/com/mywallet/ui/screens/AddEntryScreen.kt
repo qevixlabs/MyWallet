@@ -186,9 +186,27 @@ fun AddEntryScreen(
                 .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
+            // **Which of the three this is, is settled once the row exists.** A
+            // form opened on an entry is opened to correct what it says — the
+            // amount, the day, the account, what it was for — not to turn one
+            // kind of movement into another. Switching here would not edit the
+            // row so much as replace it: money out and money in move a balance
+            // opposite ways, a transfer moves two, and a movement against a debt
+            // or a card is the direction its arrangement recorded. Nothing about
+            // the row survives the change except its id.
+            //
+            // So the segment it *is* stays live and the other two go quiet,
+            // rather than the whole row greying — which would read as a form
+            // that had broken rather than as one already answered, the same
+            // reason a settled field is a quotation rather than a disabled box.
+            // A direction genuinely typed wrong is a row to delete and write
+            // again, which is one gesture on any list in the app.
+            val picksDirection = !state.isEditing
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                val isOut = !state.isTransfer && state.direction == Direction.OUT
                 SegmentedButton(
-                    selected = !state.isTransfer && state.direction == Direction.OUT,
+                    selected = isOut,
+                    enabled = picksDirection || isOut,
                     onClick = {
                         viewModel.setTransferMode(false)
                         viewModel.setDirection(Direction.OUT)
@@ -208,8 +226,10 @@ fun AddEntryScreen(
                         )
                     },
                 ) { Text(stringResource(R.string.add_money_out)) }
+                val isIn = !state.isTransfer && state.direction == Direction.IN
                 SegmentedButton(
-                    selected = !state.isTransfer && state.direction == Direction.IN,
+                    selected = isIn,
+                    enabled = picksDirection || isIn,
                     onClick = {
                         viewModel.setTransferMode(false)
                         viewModel.setDirection(Direction.IN)
@@ -227,7 +247,7 @@ fun AddEntryScreen(
                     selected = state.isTransfer,
                     // Needs somewhere to move the money to. Offering the mode with
                     // one account would lead to a form that can never be saved.
-                    enabled = state.canTransfer,
+                    enabled = (picksDirection && state.canTransfer) || state.isTransfer,
                     onClick = { viewModel.setTransferMode(true) },
                     shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3),
                     icon = {
@@ -239,7 +259,11 @@ fun AddEntryScreen(
                     },
                 ) { Text(stringResource(R.string.add_direction_transfer)) }
             }
-            if (!state.canTransfer) {
+            // Only while the choice is still open. On a row already written the
+            // transfer segment is quiet because the movement is what it is, not
+            // because there is nowhere to move money to, and the sentence about
+            // needing two accounts would be explaining the wrong thing.
+            if (picksDirection && !state.canTransfer) {
                 Text(
                     text = stringResource(R.string.transfer_needs_accounts),
                     style = MaterialTheme.typography.bodySmall,

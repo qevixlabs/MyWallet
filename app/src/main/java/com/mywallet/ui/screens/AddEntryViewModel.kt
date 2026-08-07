@@ -153,6 +153,26 @@ data class AddEntryUiState(
      */
     val isLoanInstalment: Boolean = false,
     /**
+     * True when the entry being corrected is a movement against a debt — money
+     * borrowed or lent more, a lump sum off one, a charge serviced on its own.
+     *
+     * **None of them may be made to repeat.** A movement against a debt is a
+     * one-off act rather than a standing arrangement: money lent again next
+     * month is a decision taken next month, and a rule that made one by itself
+     * would report a debt neither person agreed to — while a lump sum that
+     * repeated would pay a debt down every month whether or not it was paid,
+     * and the balance is derived from these rows. The form already withheld the
+     * repeat from a drawdown and from a purchase on a card for exactly that
+     * reason; those two were the cases anybody had reached from this screen
+     * before a debt's statement started opening the rest of them.
+     *
+     * Off `loanId` — the loan the row itself stores, which every one of these
+     * carries. An instalment stores none and is [isLoanInstalment], which
+     * withholds the same controls and says why: its rhythm belongs to the
+     * loan's schedule rather than to any one payment.
+     */
+    val isLoanMovement: Boolean = false,
+    /**
      * The overdraft an existing entry drew its money from, when editing one.
      * A drawdown is borrowing, not income, so reopening it must look like the
      * form that created it: no label to pick, no repeat to set — just where
@@ -314,14 +334,16 @@ data class AddEntryUiState(
     val isExistingDrawdown: Boolean get() = existingDrawdownName != null
 
     /**
-     * A repeating rule cannot be written against a drawdown.
+     * A repeating rule cannot be written against anything that moves a debt.
      *
-     * It re-bases the debt as it is written, and a rule that did that once a
-     * month would report a debt the user never took.
+     * Each of these re-bases a balance as it is written, and a rule that did
+     * that once a month would report a debt nobody took or pay one down nobody
+     * paid — see [isLoanMovement], which is the general case the drawdown below
+     * it was the first instance of.
      */
     val canRepeat: Boolean
-        get() = !isExistingDrawdown && !isPlanPayment && !isSingleOccurrence &&
-            selectedCardId == null
+        get() = !isLoanMovement && !isExistingDrawdown && !isPlanPayment &&
+            !isSingleOccurrence && selectedCardId == null
 
     /**
      * Whether the calendar question is worth asking at all.
@@ -642,6 +664,9 @@ class AddEntryViewModel @Inject constructor(
             amountText = formatter.toPlainInput(entry.amount),
             // **Not recorded** is an answer here — see [accountOptional].
             accountOptional = accountOptional,
+            // And nothing that moves a debt may be set to repeat — see
+            // [AddEntryUiState.isLoanMovement].
+            isLoanMovement = entry.loanId != null,
             // Nothing on a card spend, which is the whole of how one is known.
             // Left standing at the shortlist's default it would be a second
             // source alongside the card, and [save] would have to guess.
