@@ -347,8 +347,8 @@ fun DayLabel(
     secondary: String?,
     modifier: Modifier = Modifier,
     /**
-     * The day of the month alone, drawn big in the margin to the left of the
-     * two lines — the bullet the day's rows hang off.
+     * The day of the month alone, at the head of the two lines — the bullet the
+     * day's rows hang off.
      *
      * A month scrolled past is a column of near-identical grey captions, and
      * finding the 14th in it meant reading the 12th and the 13th to rule them
@@ -366,21 +366,21 @@ fun DayLabel(
                 text = it,
                 style = DayNumberStyle,
                 color = MaterialTheme.colorScheme.onSurface,
-                // **Left edge first.** The figure starts exactly where the rows
-                // under it start, so the day and its payments share the one
-                // margin the whole card is written to. Set to the right of the
-                // gutter instead — the way a column of figures usually is — it
-                // began a few points in from everything below it, and worse for
-                // the 1st than for the 28th: the heading of a day looked
-                // indented from the day itself.
-                //
-                // The gutter is still fixed, so what follows the figure starts
-                // at the same place on every heading whether the date is one
-                // digit or two.
-                textAlign = TextAlign.Start,
                 maxLines = 1,
                 modifier = Modifier
-                    .width(DAY_NUMBER_GUTTER)
+                    // **No width of its own either.** The figure starts where
+                    // the rows under it start — one margin for the day and its
+                    // payments — and the words follow immediately after it.
+                    //
+                    // A fixed gutter was tried first, so that the words would
+                    // begin at the same place under a 1 as under a 28. What it
+                    // actually did was strand the 1: two digits' worth of empty
+                    // space sat between the date and its own weekday, and a
+                    // heading that reads "1        Saturday" looks like two
+                    // things rather than one. The words shifting a few points
+                    // between one day and the next is the cheaper price — they
+                    // are a caption on a heading, not a column to be scanned.
+                    //
                     // **And no height at all.** The heading is as tall as its
                     // words make it, exactly as it was before there was a figure
                     // beside them; the figure is then drawn at its own size
@@ -393,7 +393,7 @@ fun DayLabel(
                     .height(0.dp)
                     .wrapContentHeight(unbounded = true),
             )
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(8.dp))
         }
         Column {
             Text(
@@ -414,9 +414,6 @@ fun DayLabel(
         }
     }
 }
-
-/** Wide enough for two digits of [DayNumberStyle] with nothing to spare. */
-private val DAY_NUMBER_GUTTER = 36.dp
 
 /**
  * The name of a block of rows that is not a list of movements — "Accounts",

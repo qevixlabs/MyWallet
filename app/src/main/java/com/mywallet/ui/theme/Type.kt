@@ -110,23 +110,36 @@ val DayLabelStyle: TextStyle = TextStyle(
 )
 
 /**
- * The day of the month, drawn big in the margin of the timeline.
+ * The day of the month, in the margin of the timeline.
  *
- * This is the one figure on a day's heading that is not a word: it is what the
- * eye lands on while scrolling a month, so it is set at more than twice the size
- * of the label beside it and left upright — [DayLabelStyle]'s italic is what says
- * "this is the margin, not a row", and a number leaning over at this size reads
- * as a design flourish rather than as a date. Tabular, so the days keep one edge
- * down the page whatever digits they are made of; Devanagari has no tabular
- * figures of its own and does not need them, its digits being even in width
- * already.
+ * This is the one thing on a day's heading that is not a word, so it is the one
+ * thing set upright and at a size worth landing on — [DayLabelStyle]'s italic is
+ * what says "this is the margin, not a row", and a number leaning over reads as
+ * a flourish rather than as a date.
+ *
+ * **Sized to the two lines beside it**, not to the rows below. The heading is a
+ * date, a weekday and the month it falls in, stacked — and the figure is the
+ * date *of* that stack, so it stands to its full height rather than sitting on
+ * the first line of it. A step down from that, at the size of the payments
+ * underneath, and it stopped being the thing the eye lands on: a month scrolled
+ * past went back to being a column of near-identical captions, which is the one
+ * problem it exists to solve. [lineHeight] is the two lines it spans — 16sp of
+ * [DayLabelStyle] and 16sp of `labelSmall` — and the size is what fills them.
+ *
+ * It costs nothing in height: the figure is drawn across the heading without
+ * contributing to it, so a day of one line is no taller for having a date at the
+ * head of it. See [DayLabel].
+ *
+ * Tabular, so the days keep one edge down the page whatever digits they are made
+ * of; Devanagari has no tabular figures of its own and does not need them, its
+ * digits being even in width already.
  */
 val DayNumberStyle: TextStyle = TextStyle(
     fontFamily = FontFamily.Default,
     fontWeight = FontWeight.SemiBold,
     fontSize = 26.sp,
-    lineHeight = 30.sp,
-    letterSpacing = (-1).sp,
+    lineHeight = 32.sp,
+    letterSpacing = (-0.5).sp,
     fontFeatureSettings = TABULAR,
 )
 
