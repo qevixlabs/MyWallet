@@ -788,10 +788,17 @@ fun WalletApp(
                                 },
                             ),
                         ) {
-                            // Nothing to open from here: a row on a debt's
-                            // statement turns over and shows its working rather
-                            // than leading to an editor — see [LoanLedgerScreen].
-                            LoanLedgerScreen(onBack = { navController.popBackStack() })
+                            LoanLedgerScreen(
+                                onBack = { navController.popBackStack() },
+                                // Only money with a person leads anywhere: those
+                                // rows are the user's own entries and open the
+                                // payment, pushed on top so back returns to the
+                                // statement it was read in. A bank's loan turns
+                                // its rows over instead — see [LoanLedgerScreen].
+                                onOpenEntry = {
+                                    navController.navigate(Routes.addEntry(it))
+                                },
+                            )
                         }
                         composable(Routes.SETTINGS, enterTransition = tabEnter, exitTransition = tabExit, popEnterTransition = tabEnter, popExitTransition = tabExit) {
                             SettingsScreen(

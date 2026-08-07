@@ -46,7 +46,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -64,6 +63,8 @@ import com.mywallet.ui.LocalDateDisplay
 import com.mywallet.ui.components.ConfirmDeleteDialog
 import com.mywallet.ui.components.EmptyState
 import com.mywallet.ui.components.Hairline
+import com.mywallet.ui.components.MOVEMENT_MARK_GAP
+import com.mywallet.ui.components.MovementMark
 import com.mywallet.ui.components.LIST_PANEL_ROW_INSET
 import com.mywallet.ui.components.LaterPaymentFirstDialog
 import com.mywallet.ui.components.PAGE_SIZE
@@ -75,7 +76,6 @@ import com.mywallet.ui.components.listPanel
 import com.mywallet.ui.components.rowStripe
 import com.mywallet.ui.labelRes
 import com.mywallet.ui.withNote
-import com.mywallet.ui.theme.DayNumberStyle
 import com.mywallet.ui.theme.MoneySmallStyle
 import com.mywallet.ui.theme.TitleStyle
 import com.mywallet.ui.theme.WalletTheme
@@ -93,36 +93,46 @@ import androidx.compose.material3.SnackbarResult
  * memory of it — which is the only thing money between people is ever settled
  * by.
  *
- * **A row turns over and shows its working.** A tap does not open an editor: the
- * rows on this page are the app's own record of what the debt did — an instalment
- * its rule wrote, the interest its rate charged, the balance its schedule arrived
- * at — and every figure on them is read back out of the loan rather than stored
- * on the row. Sending a tap to the entry form offered to retype an instalment the
- * schedule would go on quoting its own figure for, which is a second opinion this
- * page has no way to honour. An amount that was genuinely mistyped is corrected on
- * the card that recorded it, which is where the app took it in.
+ * **What a tap does depends on who wrote the row, and the two debts are not one
+ * screen wearing two names.** A bank's loan keeps its own books: the instalments
+ * are its rule speaking, the interest is its rate charging, and every figure on
+ * those rows is read back out of the schedule rather than stored on the row —
+ * so a tap that opened the entry form offered to retype a figure the loan would
+ * go on quoting its own version of, which is a second opinion the page has no way
+ * to honour. Those rows **turn over** instead and show the working. Money with a
+ * person has no schedule and no rule: every row on it is something the user typed
+ * on this app's own Payment or Borrow more card, and the right thing to do with a
+ * fact the user wrote is to let them correct it. Those rows **open the payment**,
+ * as they always did.
  *
- * What a reader actually arrives here with is *why did रू 10,984 barely move the
- * balance?*, and the row now answers it in place. The two facts that answer it
- * used to be on the front: the split crushed into a sentence under the date, and
- * what was left stranded at the foot of the amount column — three unrelated
- * remarks in three corners of one row, none of them saying they were parts of a
- * single sum. Turned over, they are that sum, with the figure it was worked out
- * *from* — which the front never carried at all and without which the reader had
- * the answer and neither of the numbers behind it. See [LedgerRowWorking].
+ * What the turn answers is *why did रू 10,984 barely move the balance?* The facts
+ * that answer it used to be on the front: the split crushed into a sentence under
+ * the date, and what was left stranded at the foot of the amount column — three
+ * unrelated remarks in three corners of one row, none of them saying they were
+ * parts of a single sum. Turned over, they are that sum, with the figure it was
+ * worked out *from* — which the front never carried at all and without which the
+ * reader had the answer and neither of the numbers behind it. See
+ * [LedgerRowWorking].
  *
  * A row is swiped away — every payment, the instalments included. Removing one
  * puts the debt back where the payment found it: a lump sum's money goes back on
  * the balance, and an instalment leaves a period that charged its interest and
  * cleared nothing, which the next payment then collects. See [Arrears]. **The one
- * row that stays is the debt arriving**, which is not something that happened to
- * the loan but the loan itself — see [LedgerRow.canDelete].
+ * row that stays is the debt arriving**, on both kinds of debt alike, which is
+ * not something that happened to the loan but the loan itself — see
+ * [LedgerRow.canDelete].
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoanLedgerScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    /**
+     * Opens the payment itself — the entry that recorded it, which is where its
+     * date, its amount and the account it left are written down. Reached only
+     * from a debt with a person, whose rows are the user's own entries.
+     */
+    onOpenEntry: (String) -> Unit = {},
     viewModel: LoanLedgerViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -135,13 +145,19 @@ fun LoanLedgerScreen(
     // has no Undo behind it at all, and a payment removed by a stray thumb moves
     // the debt.
     var confirming by remember { mutableStateOf<String?>(null) }
-    // Which rows are showing their working. A list rather than a single id, so
-    // two instalments can be turned over at once: what a reader is usually doing
-    // with this page is watching the split move from one payment to the next,
-    // and a page that turned the last row back every time it turned a new one
-    // would answer that question one half at a time. Saved for the reason the
-    // page count is: a rotation must not fold the reader's work back up.
+    // Which rows are showing their working — on a debt that has any. A list
+    // rather than a single id, so two instalments can be turned over at once:
+    // what a reader is usually doing with this page is watching the split move
+    // from one payment to the next, and a page that turned the last row back
+    // every time it turned a new one would answer that question one half at a
+    // time. Saved for the reason the page count is: a rotation must not fold the
+    // reader's work back up.
     val turned = rememberSaveable { mutableStateListOf<String>() }
+    // Whether a tap turns a row over or opens the payment it is about. Money
+    // with a person is the user's own entries and nothing else — see the screen
+    // doc — so there is nothing on those rows the app worked out and nothing to
+    // show the working of.
+    val turns = state.kind != LoanKind.PERSONAL
     // And says so once it has gone, the way every other list that removes a
     // movement does. A row vanishing from under the thumb with nothing said
     // reads as the page having glitched rather than as the delete landing.
@@ -262,9 +278,12 @@ fun LoanLedgerScreen(
                         )
                         // Every payment swipes away, an instalment included; the
                         // debt arriving does not — see [LedgerRow.canDelete].
-                        val turn = {
-                            if (!turned.remove(row.id)) turned.add(row.id)
-                            Unit
+                        val onClick = {
+                            if (turns) {
+                                if (!turned.remove(row.id)) turned.add(row.id)
+                            } else {
+                                onOpenEntry(row.id)
+                            }
                         }
                         if (row.canDelete) {
                             SwipeToDelete(
@@ -277,8 +296,9 @@ fun LoanLedgerScreen(
                                     row = row,
                                     isLent = state.isLent,
                                     kind = state.kind,
+                                    turns = turns,
                                     turned = row.id in turned,
-                                    onTurn = turn,
+                                    onClick = onClick,
                                     modifier = banded,
                                 )
                             }
@@ -287,8 +307,9 @@ fun LoanLedgerScreen(
                                 row = row,
                                 isLent = state.isLent,
                                 kind = state.kind,
+                                turns = turns,
                                 turned = row.id in turned,
-                                onTurn = turn,
+                                onClick = onClick,
                                 modifier = paper.then(banded),
                             )
                         }
@@ -449,34 +470,43 @@ private fun SummaryLine(
 }
 
 /**
- * The day a payment fell on, at the head of its own row — the timeline's big
- * figure worn the way Home's rows wear their mark, since this list has no day
- * groups to hang a heading on: a debt moves a handful of times a year, and a
- * heading over every single row was a page of headings.
+ * Which way the money ran, at the head of the row — the mark Home, Reminders and
+ * the Timeline all lead their rows with, on the same money two taps further in.
  *
- * The figure alone, in whichever calendar is being read. Which month and which
- * year it counts in — a debt's statement spans years, and "20" alone cannot be
- * told from the same day three years earlier — is the tail of the row's own
- * subtext, where the rest of what the payment has to say already is.
+ * It replaced the day's figure in that position. A big numeral was the timeline's
+ * answer to a page that groups by day, and this page does not: a debt moves a
+ * handful of times a year, so the figure said "20" over a row whose own words
+ * then had to say which month and which year — and the reader was being asked to
+ * assemble one date out of two places while the thing they were scanning for,
+ * money out against money in, had no mark at all. The full date is one line of
+ * the subtext now, and the margin carries the fact worth carrying.
  *
- * As wide as it is and no wider — the timeline's own lesson: a gutter sized
- * for two digits stranded the single-digit days a gap away from their own
- * words, and the words shifting a few points between rows is the cheaper
- * price.
+ * **Borrowing is money arriving and paying is money leaving** — which is the plain
+ * reading of a debt and is why this can be worked out from what the row already
+ * knows. Lending reverses both. Buying on a card is the exception the flag exists
+ * for: it puts the balance up like a drawdown and nothing arrives, the money is
+ * simply gone (see [LoanMovementKind.SPEND]).
+ *
+ * **In the direction's own colour**, exactly as every other list draws it — red
+ * out, green in. It was drawn in the quiet ink at first, on the reasoning that
+ * the amount at the other end of the row is coloured by what the payment did to
+ * the *debt* rather than by which way the money went, so a payment off a loan is
+ * green while the money left the account, and a red arrow beside a green figure
+ * would read as the app contradicting itself. It does not. The two ends of the
+ * row are answering two different questions and both answers are true: the money
+ * went out, and the debt came down. A grey arrow answers neither — it costs the
+ * page the one signal a reader scanning a statement is actually sorting by, and
+ * it makes this the only list in the app where the mark means less than it does
+ * everywhere else.
  */
 @Composable
-private fun LedgerRowDate(date: java.time.LocalDate) {
-    val dates = LocalDateDisplay.current
-    Text(
-        text = dates.dayNumber(date),
-        style = DayNumberStyle,
-        color = MaterialTheme.colorScheme.onSurface,
-        maxLines = 1,
-    )
+private fun LedgerRowMark(row: LedgerRow, isLent: Boolean) {
+    MovementMark(isIn = row.kind != LoanMovementKind.SPEND && row.increases != isLent)
 }
 
 /**
- * One line of the statement, and the working behind it on the other side.
+ * One line of the statement, and — where the debt has one — the working behind it
+ * on the other side.
  *
  * **Both faces are always composed, one of them invisible**, so the box is as
  * tall as the taller of the two whichever way it is showing. Drawing only the
@@ -486,7 +516,12 @@ private fun LedgerRowDate(date: java.time.LocalDate) {
  * of text laid out per row and nothing else; the hidden face is taken out of the
  * semantics tree as well, or every row would be read aloud twice.
  *
- * A row with nothing behind it does not turn at all — see [LedgerRow.hasWorking].
+ * **A row that does not turn is not measured for a face it will never show.**
+ * Money with a person has no working — see the screen doc — and composing the
+ * back of those rows anyway would pad every one of them to a height nothing on
+ * the page ever uses.
+ *
+ * A row with nothing behind it does not turn either — see [LedgerRow.hasWorking].
  * A card that turns to a blank back is worse than one that does not turn.
  */
 @Composable
@@ -495,11 +530,23 @@ private fun LedgerRowView(
     isLent: Boolean,
     /** Which debt this is: what a movement is *called* depends on it. */
     kind: LoanKind?,
+    /** Whether a tap turns this row over, or opens the payment it is about. */
+    turns: Boolean,
     /** Whether this row is showing its working rather than the payment. */
     turned: Boolean,
-    onTurn: () -> Unit,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    if (!turns) {
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick),
+        ) {
+            LedgerRowFace(row = row, isLent = isLent, kind = kind)
+        }
+        return
+    }
     // Kept as the state rather than unwrapped by `by`: read inside a
     // `graphicsLayer` block the angle is a draw-phase read, so a turning row
     // repaints without recomposing — read out here it would recompose every
@@ -529,7 +576,7 @@ private fun LedgerRowView(
             // statement, and the label is what happens if you touch it.
             .then(
                 if (row.hasWorking) {
-                    Modifier.clickable(onClickLabel = turnLabel) { onTurn() }
+                    Modifier.clickable(onClickLabel = turnLabel, onClick = onClick)
                 } else {
                     Modifier
                 }
@@ -586,26 +633,24 @@ private fun LedgerRowFace(
             // Inset from the paper's edge rather than from the page's, the way
             // a card's rows are — see [listPanel].
             .padding(horizontal = LIST_PANEL_ROW_INSET, vertical = 12.dp),
-        // Centred, the way every other list's rows are: the day's figure sits
-        // in the middle of the lines it heads, not hung from the first one —
+        // Centred, the way every other list's rows are: the mark sits in the
+        // middle of the lines it heads, not hung from the first one —
         // top-aligned it read as belonging to the title alone, with the rest
         // of the row dangling under it.
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        LedgerRowDate(date = row.date)
-        // A share of the figure's own size, exactly as the timeline spaces its
-        // day from the words beside it — see [DayLabel]. A fixed 12dp on top
-        // of a fixed-width tile left the single-digit days a gulf from their
-        // own words.
-        Spacer(Modifier.width(with(LocalDensity.current) { DayNumberStyle.fontSize.toDp() / 3 }))
+        LedgerRowMark(row = row, isLent = isLent)
+        // The same gap every other list leaves between the mark and the words
+        // it heads. One arrow, one size, one gap, on every list in the app.
+        Spacer(Modifier.width(MOVEMENT_MARK_GAP))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 // What the movement did, with what the user wrote about it on
                 // the end — "Borrowed more - car repair": the one sentence the
-                // app writes about a payment, leading the row's words now that
-                // the date is the figure beside them. The date lines the row
-                // used to carry — one calendar on top and the other two lines
-                // below — are that figure's block. See [LedgerRowDate].
+                // app writes about a payment, and the row's first line: what a
+                // reader is looking down this page for is which payment, and
+                // the date they are checking it against is the last line of the
+                // block rather than the first. See [LedgerRowMark].
                 //
                 // **Except on something bought with the facility, where the note
                 // is the whole of it.** What the user typed is the name of the
@@ -633,14 +678,15 @@ private fun LedgerRowFace(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            // And the rest of the date, always the last line of the words: the
-            // month with its year, since a debt's statement spans them — and,
-            // reading Nepali, the English date joined on with a dash rather
-            // than dotted off as a fact of its own: "पौष २०८२ - 1 Jan" is one
-            // date said twice. The day itself is the big figure beside the
-            // row; this line is what that figure alone cannot say.
+            // The date, whole, and always the last line of the words. With its
+            // year, unlike a day heading on the timeline: a debt runs for years
+            // and "20 Saun" alone cannot be told from the same day three years
+            // earlier, which is exactly the row somebody will be disputing.
+            // Reading Nepali, the English date is joined on with a dash rather
+            // than dotted off as a fact of its own — "२२ साउन २०८३ - 7 Aug" is
+            // one date said twice, not two things about the payment.
             Text(
-                text = dates.monthAndYear(row.date) +
+                text = dates.full(row.date) +
                     (dates.secondaryShort(row.date)?.let { " - $it" } ?: ""),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -702,10 +748,11 @@ private fun LedgerRowFace(
  * and a loan re-based by a lump sum has no record of the balance it used to
  * carry. A face of two true lines is worth more than four with a guess in it.
  *
- * **The day stays where it was**, at the head of both faces. It is what a row is
- * called on this page, and a card that turned to a set of figures with nothing
- * naming which payment they belong to would be a different row rather than the
- * back of this one.
+ * **The mark stays where it was**, at the head of both faces. A card that turned
+ * to a set of figures with nothing at the head of them would read as a different
+ * row rather than as the back of this one, and the arrow is the one thing about
+ * the payment that is as true on this side as on the other: which way the money
+ * ran does not change for being explained.
  */
 @Composable
 private fun LedgerRowWorking(row: LedgerRow, isLent: Boolean) {
@@ -716,8 +763,8 @@ private fun LedgerRowWorking(row: LedgerRow, isLent: Boolean) {
             .padding(horizontal = LIST_PANEL_ROW_INSET, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        LedgerRowDate(date = row.date)
-        Spacer(Modifier.width(with(LocalDensity.current) { DayNumberStyle.fontSize.toDp() / 3 }))
+        LedgerRowMark(row = row, isLent = isLent)
+        Spacer(Modifier.width(MOVEMENT_MARK_GAP))
         Column(modifier = Modifier.weight(1f)) {
             row.balanceBefore?.let {
                 WorkingLine(

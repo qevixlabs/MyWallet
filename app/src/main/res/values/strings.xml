@@ -631,7 +631,7 @@
     <!-- Money between people has no schedule, so there is no missed instalment
          to warn about: the sentence stops at what the swipe does and what comes
          back. -->
-    <string name="loan_ledger_explain_person">Tap a payment to see how it was worked out. Swipe it left to delete it: the balance will be restored.</string>
+    <string name="loan_ledger_explain_person">Tap a payment to correct it. Swipe it left to delete it: the balance will be restored.</string>
     <!-- The row turned over. Four figures that add up in front of the reader:
          what was owed when the payment landed, what the lender kept, what came
          off the debt, and what that left. -->
