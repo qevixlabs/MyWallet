@@ -488,7 +488,11 @@ private fun LedgerRowView(
             // Inset from the paper's edge rather than from the page's, the way
             // a card's rows are — see [listPanel].
             .padding(horizontal = LIST_PANEL_ROW_INSET, vertical = 12.dp),
-        verticalAlignment = Alignment.Top,
+        // Centred, the way every other list's rows are: the day's figure sits
+        // in the middle of the lines it heads, not hung from the first one —
+        // top-aligned it read as belonging to the title alone, with the rest
+        // of the row dangling under it.
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         LedgerRowDate(date = row.date)
         // A share of the figure's own size, exactly as the timeline spaces its
@@ -520,19 +524,26 @@ private fun LedgerRowView(
                 },
                 style = MaterialTheme.typography.bodyLarge,
             )
-            // The holding the money passed through, then which month — and,
-            // reading Nepali, the English date joined to it with a dash rather
-            // than standing as a third item: "पौष २०८२ - 1 Jan" is one date
-            // said twice, and dotting it off made it read as one more fact.
-            // The day's own figure is the big one beside the row; this line is
-            // what that figure alone cannot say, said last, after the words
-            // that tell this payment from the others.
+            // The holding the money passed through, on its own quiet line the
+            // way every other list names it.
+            row.accountName?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            // And the rest of the date, always the last line of the words: the
+            // month with its year, since a debt's statement spans them — and,
+            // reading Nepali, the English date joined on with a dash rather
+            // than dotted off as a fact of its own: "पौष २०८२ - 1 Jan" is one
+            // date said twice. The day itself is the big figure beside the
+            // row; this line is what that figure alone cannot say.
             Text(
-                text = listOfNotNull(
-                    row.accountName,
-                    dates.monthAndYear(row.date) +
-                        (dates.secondaryShort(row.date)?.let { " - $it" } ?: ""),
-                ).joinToString(" · "),
+                text = dates.monthAndYear(row.date) +
+                    (dates.secondaryShort(row.date)?.let { " - $it" } ?: ""),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
