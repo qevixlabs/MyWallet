@@ -744,16 +744,24 @@ private fun AccountRow(
             }
         }
     }
-        // How far along this arrangement is, drawn rather than said — a goal
-        // filling up, a policy being paid up, a deposit running down its term.
-        // Two figures and a date are a sentence to be read; a bar is the one
-        // thing on this screen that can be understood without reading, which is
-        // the whole point of setting a goal rather than simply having savings,
-        // and just as true of everything else with an end to reach. Anything
-        // that is simply somewhere money sits has none, since there is nothing
-        // it is on its way to.
+        // How far along this arrangement is, drawn rather than said — a deposit
+        // running down its term. Two figures and a date are a sentence to be
+        // read; a bar is the one thing on this screen that can be understood
+        // without reading. Anything that is simply somewhere money sits has
+        // none, since there is nothing it is on its way to.
+        //
+        // **Only inside a bank's card** — see [HoldingProgressBar]. A policy and
+        // a goal each sit alone in a card of their own, where the bar was the
+        // last thing in it and read as the card's bottom border rather than as a
+        // measure of anything. The figures on those rows already say it in
+        // words: a goal carries "of रू 1,50,000" beside its balance, and a policy
+        // the day it pays out.
         HoldingProgressBar(
-            progress = HoldingProgress.of(row.account, row.balance, today),
+            progress = if (underBank) {
+                HoldingProgress.of(row.account, row.balance, today)
+            } else {
+                null
+            },
             color = row.account.color,
         )
     }
@@ -775,6 +783,13 @@ private fun AccountRow(
  * block on the Timeline. A debt has no colour column unless it is a card, so it
  * falls back to the ink its figure is already printed in; passing null draws
  * nothing at all, which is what a holding with no honest measure gets.
+ *
+ * **And what a holding alone in its card gets.** Under a bank the bar has rows
+ * above and below it and reads as belonging to one of them; in a card with a
+ * single row it is the last thing in the card, spans its whole width, and reads
+ * as a rule drawn along the bottom — a border round the block rather than a
+ * measure of the arrangement. Both callers decide that, and both decide it the
+ * same way: see the notes at each call.
  */
 @Composable
 private fun HoldingProgressBar(progress: Float?, color: Color) {
@@ -1008,7 +1023,13 @@ private fun LoanRow(
     }
         // How much of it is behind them — or, on a card, how much of the ceiling
         // is gone. The two run opposite ways on purpose; see [HoldingProgress].
-        HoldingProgressBar(progress = HoldingProgress.of(loan), color = mark)
+        //
+        // Only under a bank, for the reason the accounts above are: money with a
+        // person is the only row in its card, and a bar drawn under the only row
+        // of a card is a line along the bottom of it. It is also the debt with
+        // least to measure — nothing is repaid until it all is, so the bar sat
+        // empty at exactly the width of the card.
+        HoldingProgressBar(progress = if (underBank) HoldingProgress.of(loan) else null, color = mark)
     }
     }
 }

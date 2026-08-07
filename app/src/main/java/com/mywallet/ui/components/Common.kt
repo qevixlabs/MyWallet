@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -373,7 +374,19 @@ fun DayLabel(
                 // wider than the one the two-digit days had.
                 textAlign = TextAlign.End,
                 maxLines = 1,
-                modifier = Modifier.width(DAY_NUMBER_GUTTER),
+                modifier = Modifier
+                    .width(DAY_NUMBER_GUTTER)
+                    // **And no height at all.** The heading is as tall as its
+                    // words make it, exactly as it was before there was a figure
+                    // beside them; the figure is then drawn at its own size
+                    // across whatever that came to, using the air the row
+                    // already had above and below its text rather than asking
+                    // for more. A day of one line and a day of two are the same
+                    // heading with a different amount to say, and the date at
+                    // the head of each has no business making either of them
+                    // taller.
+                    .height(0.dp)
+                    .wrapContentHeight(unbounded = true),
             )
             Spacer(Modifier.width(12.dp))
         }

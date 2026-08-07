@@ -862,8 +862,9 @@ private fun BalanceRow(
  * The date's own figure leads, big enough to scroll to — and in whichever
  * calendar is being read, so a Nepali page is counted in Nepali days and a
  * Gregorian one in Gregorian days. The words beside it are what the figure alone
- * cannot say: the weekday, then the month it belongs to and, on a Nepali page,
- * the English date the same way a printed patro puts it in the corner of a cell.
+ * cannot say: the month it belongs to, the weekday where that is worth a line —
+ * see [weekday] — and, on a Nepali page, the English date the same way a printed
+ * patro puts it in the corner of a cell.
  *
  * The month is there because the figure needs it. A day number is only a date
  * once something says which month it counts in, and on this page that is not
@@ -876,15 +877,28 @@ private fun BalanceRow(
  * cannot be lettered two ways.
  */
 @Composable
-private fun DayHeading(date: LocalDate, modifier: Modifier = Modifier) {
+private fun DayHeading(
+    date: LocalDate,
+    modifier: Modifier = Modifier,
+    /**
+     * Whether the day it fell on is worth a line of its own.
+     *
+     * Yes on a day that has happened, where it is the one thing about the date
+     * a reader looking back actually uses — "what did that Saturday cost me?".
+     * No on a day still to come, which never carried one: a heading there is a
+     * date to arrive at rather than a day to remember, and the line would be a
+     * second row of words on a heading that had one, making every future day a
+     * notch taller than it is today.
+     */
+    weekday: Boolean = true,
+) {
     val dates = LocalDateDisplay.current
+    val month = dates.monthName(date)
+    val gregorian = dates.secondaryShort(date)
     DayLabel(
         day = dates.dayNumber(date),
-        primary = dates.weekdayName(date),
-        secondary = listOfNotNull(
-            dates.monthName(date),
-            dates.secondaryShort(date),
-        ).joinToString(" · "),
+        primary = if (weekday) dates.weekdayName(date) else month,
+        secondary = listOfNotNull(month.takeIf { weekday }, gregorian).joinToString(" · "),
         modifier = modifier,
     )
 }
@@ -920,8 +934,9 @@ private fun ProjectedDayHeader(
             // in the margin. A day still to come is a day: set in `titleSmall`
             // it was the one heading on the page in a different voice, and an
             // EMI's date read louder than the date of the rent that has already
-            // gone out.
-            DayHeading(date = date, modifier = Modifier.weight(1f))
+            // gone out. Without the weekday, which it has never carried — see
+            // [DayHeading].
+            DayHeading(date = date, weekday = false, modifier = Modifier.weight(1f))
             Text(
                 text = balanceText,
                 style = MoneySmallStyle,
