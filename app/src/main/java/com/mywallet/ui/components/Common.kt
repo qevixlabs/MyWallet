@@ -366,13 +366,18 @@ fun DayLabel(
                 text = it,
                 style = DayNumberStyle,
                 color = MaterialTheme.colorScheme.onSurface,
-                // Set to the right of a fixed gutter, the way any column of
-                // figures is: the 9th and the 30th head days on the same page,
-                // and the words beside them have to start at the same place or
-                // the column of headings reads as ragged. Centred instead, a
-                // single digit drifted away from its own weekday and left a gap
-                // wider than the one the two-digit days had.
-                textAlign = TextAlign.End,
+                // **Left edge first.** The figure starts exactly where the rows
+                // under it start, so the day and its payments share the one
+                // margin the whole card is written to. Set to the right of the
+                // gutter instead — the way a column of figures usually is — it
+                // began a few points in from everything below it, and worse for
+                // the 1st than for the 28th: the heading of a day looked
+                // indented from the day itself.
+                //
+                // The gutter is still fixed, so what follows the figure starts
+                // at the same place on every heading whether the date is one
+                // digit or two.
+                textAlign = TextAlign.Start,
                 maxLines = 1,
                 modifier = Modifier
                     .width(DAY_NUMBER_GUTTER)
