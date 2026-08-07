@@ -496,7 +496,6 @@
     <!-- The table is a forecast and says so. Read as a record, a user checking
          it against a bank statement would think the app had the wrong figures. -->
     <string name="loan_schedule_nth">Payment %1$d</string>
-    <string name="loan_schedule_left">Left after it: %1$s</string>
     <string name="loan_schedule_made">%1$d already paid before this.</string>
     <string name="loan_schedule_col_date">Date</string>
     <string name="loan_schedule_col_payment">Payment</string>
@@ -628,11 +627,24 @@
     <!-- The ledger: everything that has actually happened to one loan -->
     <string name="loan_ledger_open">See every payment</string>
     <string name="loan_ledger_title">Payment by payment</string>
-    <string name="loan_ledger_explain">Swipe a payment left to delete it. The balance will be restored, and a missed instalment is added to the next one.</string>
+    <string name="loan_ledger_explain">Tap a payment to see how it was worked out. Swipe it left to delete it: the balance will be restored, and a missed instalment is added to the next one.</string>
     <!-- Money between people has no schedule, so there is no missed instalment
          to warn about: the sentence stops at what the swipe does and what comes
          back. -->
-    <string name="loan_ledger_explain_person">Swipe a payment left to delete it. The balance will be restored.</string>
+    <string name="loan_ledger_explain_person">Tap a payment to see how it was worked out. Swipe it left to delete it: the balance will be restored.</string>
+    <!-- The row turned over. Four figures that add up in front of the reader:
+         what was owed when the payment landed, what the lender kept, what came
+         off the debt, and what that left. -->
+    <string name="loan_working_before">Was owing</string>
+    <string name="loan_working_before_lent">Was owed</string>
+    <string name="loan_working_interest">Interest</string>
+    <string name="loan_working_principal">Off the loan</string>
+    <string name="loan_working_principal_lent">Off what they owe</string>
+    <string name="loan_working_after">Left owing</string>
+    <string name="loan_working_after_lent">Left to come back</string>
+    <!-- What the tap does, said to a reader who cannot see the row turn. -->
+    <string name="loan_working_show">See how it was worked out</string>
+    <string name="loan_working_hide">Back to the payment</string>
     <string name="loan_ledger_empty_title">Nothing recorded yet</string>
     <string name="loan_ledger_empty">Payments appear here as you record them, with the balance owing after each one.</string>
     <string name="loan_ledger_paid">%1$s paid so far, interest included</string>

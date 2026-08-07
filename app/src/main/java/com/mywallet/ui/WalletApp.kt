@@ -788,14 +788,10 @@ fun WalletApp(
                                 },
                             ),
                         ) {
-                            LoanLedgerScreen(
-                                onBack = { navController.popBackStack() },
-                                // The payment itself, pushed on top: back returns
-                                // to the statement it was read in.
-                                onOpenEntry = {
-                                    navController.navigate(Routes.addEntry(it))
-                                },
-                            )
+                            // Nothing to open from here: a row on a debt's
+                            // statement turns over and shows its working rather
+                            // than leading to an editor — see [LoanLedgerScreen].
+                            LoanLedgerScreen(onBack = { navController.popBackStack() })
                         }
                         composable(Routes.SETTINGS, enterTransition = tabEnter, exitTransition = tabExit, popEnterTransition = tabEnter, popExitTransition = tabExit) {
                             SettingsScreen(

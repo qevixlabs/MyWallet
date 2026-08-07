@@ -194,6 +194,21 @@ data class LoanMovement(
     val principalPart: Money? = null,
     val interestPart: Money? = null,
     /**
+     * What was owed the moment before this happened, or null when the app cannot
+     * say.
+     *
+     * The figure a payment is *worked out from*, and the only one that makes the
+     * other three add up: interest is charged on this, whatever the payment has
+     * left over comes off it, and [balanceAfter] is what that leaves. Without it
+     * a reader has the answer and neither of the numbers it came from.
+     *
+     * Deliberately null on the debt arriving. The schedule's running figure
+     * before that row is the loan's own principal, which is what the borrowing
+     * *made* rather than what was owed before it — stating it would say the debt
+     * existed the day before it did.
+     */
+    val balanceBefore: Money? = null,
+    /**
      * What was owed once this had happened, or null when the app cannot say.
      *
      * Null is a real answer here rather than a gap to fill in. A loan re-based
@@ -245,6 +260,7 @@ object LoanLedger {
         val ordered = facts.sortedWith(compareBy({ it.date }, { it.createdAt }))
         val kinds = ordered.map { it.kind() }
         val balanceAfter = arrayOfNulls<Money>(ordered.size)
+        val balanceBefore = arrayOfNulls<Money>(ordered.size)
         val principal = arrayOfNulls<Money>(ordered.size)
         val interest = arrayOfNulls<Money>(ordered.size)
 
@@ -285,6 +301,15 @@ object LoanLedger {
                         kinds[index] == LoanMovementKind.INTEREST
                     ) {
                         balanceAfter[index] = running
+                        // And what it was worked out from, which for interest
+                        // serviced on its own is the same figure said twice —
+                        // that being the fact the row exists to state. Not on
+                        // the debt arriving: the schedule's figure before that
+                        // row is what the borrowing created, not what was owed
+                        // the day before it.
+                        if (kinds[index] == LoanMovementKind.INTEREST) {
+                            balanceBefore[index] = running
+                        }
                     }
                     return@forEachIndexed
                 }
@@ -294,6 +319,10 @@ object LoanLedger {
                 while (paid + 1 in loan.arrears.missed) paid++
                 val row = rows.getOrNull(paid) ?: return@forEachIndexed
                 paid++
+                // Where the schedule stood when this payment arrived, taken
+                // before it moves: the interest below was charged on this
+                // figure, and the principal below came off it.
+                balanceBefore[index] = running
                 running = row.balance
                 balanceAfter[index] = row.balance
                 principal[index] = row.principal
@@ -308,6 +337,10 @@ object LoanLedger {
                 // carrying an error backwards through the rest of the history.
                 val delta = ordered[index].delta(kinds[index], loan.currencyCode) ?: break
                 running -= delta
+                // Walking backwards hands the figure the row started from for
+                // nothing: it is the balance one step further back, which is
+                // exactly where the subtraction has just left the total.
+                if (kinds[index] != LoanMovementKind.OPENING) balanceBefore[index] = running
             }
         }
 
@@ -324,6 +357,7 @@ object LoanLedger {
                 note = fact.note,
                 principalPart = principal[index],
                 interestPart = interest[index],
+                balanceBefore = balanceBefore[index],
                 balanceAfter = balanceAfter[index],
             )
             // Newest first, like every other list of what happened in the app.

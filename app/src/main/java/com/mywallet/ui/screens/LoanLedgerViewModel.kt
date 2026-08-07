@@ -38,11 +38,23 @@ data class LedgerRow(
     val amount: String,
     /** What that came to in the display currency, when the two differ. */
     val converted: String?,
+    /**
+     * The working behind the row, drawn on its other face — see [hasWorking].
+     *
+     * Four figures that add up in front of the reader: what was owed when the
+     * payment arrived, how much of it the lender kept as interest, how much
+     * actually came off the debt, and what that left. They used to be scattered
+     * across the front of the row — two of them crushed into a sentence under
+     * the date and the third stranded in the amount column — where they read as
+     * three unrelated remarks rather than as one sum. Any of them may be null on
+     * its own: the app states the parts of the arithmetic it can stand behind
+     * and leaves out the ones it cannot.
+     */
+    val balanceBefore: String? = null,
+    val workingInterest: String? = null,
+    val workingPrincipal: String? = null,
     /** What was left owing afterwards, or null when the app cannot say. */
     val balanceAfter: String?,
-    /** What an instalment was made of, when the schedule knows. */
-    val splitPrincipal: String? = null,
-    val splitInterest: String? = null,
     /**
      * The holding the money passed through, named on the row — the bank it was
      * paid from, or the cash tin it was handed out of. Null on a payment that
@@ -60,20 +72,38 @@ data class LedgerRow(
     /**
      * Whether this row can be swiped away.
      *
-     * Every row can, an instalment included. It was withheld on the reasoning
-     * that an instalment is the loan's own rule speaking and the way to change
-     * what the schedule says is to change the schedule — but the timeline has
-     * always let one go, and a payment that never came out of the account is a
-     * fact about the world rather than an opinion about the schedule. Refusing
-     * it here made the same row deletable on one screen and not on the other,
-     * and the screen that refused was the one showing what removing it would do
-     * to the debt.
+     * Every payment can, an instalment included. It was withheld on instalments
+     * for a while on the reasoning that an instalment is the loan's own rule
+     * speaking and the way to change what the schedule says is to change the
+     * schedule — but the timeline has always let one go, and a payment that
+     * never came out of the account is a fact about the world rather than an
+     * opinion about the schedule. What the schedule does about it is [Arrears]:
+     * the period charges its interest, clears no principal, and the next payment
+     * collects both.
      *
-     * What the schedule does about it is [Arrears]: the period charges its
-     * interest, clears no principal, and the next payment collects both.
+     * **The debt arriving is the one row that stays.** Every other line here is
+     * something that happened *to* a loan and can be taken back off it; that one
+     * is the loan. Removing it would leave a debt with a balance, a schedule and
+     * a year of instalments, and no money ever having been borrowed — which is
+     * not a correction but a hole, and the way to undo a loan that should never
+     * have been written down is to delete the loan.
      */
     val canDelete: Boolean = true,
-)
+) {
+    /**
+     * Whether there is a second face worth turning the row over for.
+     *
+     * A row the app can say nothing about behind — a payment in another currency,
+     * whose effect on a debt held in this one cannot be stated without inventing
+     * a rate — does not flip at all. A card that turns to a blank back is worse
+     * than one that does not turn.
+     */
+    val hasWorking: Boolean
+        get() = balanceBefore != null ||
+            workingInterest != null ||
+            workingPrincipal != null ||
+            balanceAfter != null
+}
 
 data class LoanLedgerState(
     val name: String = "",
@@ -119,13 +149,21 @@ data class LoanLedgerState(
  * have we each done about it?" — which is the question money between people
  * really turns on.
  *
- * A row cannot be *edited* here: a payment's amount is corrected where it was
- * recorded, and a row that quietly reopened an entry would offer to change a
- * figure whose effect on the balance lives in the loan rather than in the entry.
- * It can be **removed**, which is a different act and the one this page was
- * missing — a mistyped lump sum could be swiped out of the timeline, but the
- * balance it had taken off the debt stayed off, and this is the only screen where
- * both facts are visible at once.
+ * A row cannot be *edited* here, and that is the design rather than an omission.
+ * Every line on this page is the app's own record of what a debt did — an
+ * instalment its rule wrote, the interest its rate charged, the balance its
+ * schedule arrived at — and each figure is read back out of the loan rather than
+ * stored on the row. Opening one in the entry form offered to retype an
+ * instalment that the schedule would go on quoting its own figure for, which is
+ * not a correction but a second opinion the page has no way to honour. A payment
+ * whose *amount* was mistyped is corrected where it was recorded, on the card
+ * that recorded it.
+ *
+ * What a row does instead is **turn over** and show its working, and it can be
+ * **removed** — a different act and the one this page was missing, since a
+ * mistyped lump sum could always be swiped out of the timeline while the balance
+ * it had taken off the debt stayed off, and this is the only screen where both
+ * facts are visible at once.
  */
 @HiltViewModel
 class LoanLedgerViewModel @Inject constructor(
@@ -209,14 +247,32 @@ class LoanLedgerViewModel @Inject constructor(
         base: MoneyFormatter,
         baseCode: String,
     ): LedgerRow {
+        val sameCurrency = currencyCode.equals(loan.currencyCode, ignoreCase = true)
         // A row is printed in the currency it was actually paid in, which is
         // normally the loan's — but an instalment the user corrected by hand
         // need not be, and stamping it with the loan's symbol would misname it.
-        val paidIn = if (currencyCode.equals(loan.currencyCode, ignoreCase = true)) {
+        val paidIn = if (sameCurrency) {
             own
         } else {
             MoneyFormatter(CurrencyOption.byCode(currencyCode), grouping = settings.grouping)
         }
+        // What the payment was made of, for the row's other face. The schedule
+        // fills this for an instalment and for nothing else, because it is the
+        // only thing that can: the payment figure alone cannot say how much of
+        // it the lender kept. But two kinds need no schedule to be sure of —
+        // a lump sum is all principal and a serviced charge is all interest,
+        // which is what those movements *are* rather than a guess about them —
+        // and leaving their face bare would hide the plainest arithmetic on the
+        // page behind the hardest.
+        //
+        // Only where the payment was made in the debt's own currency, though.
+        // Every other figure on that face is a balance in the loan's money, and
+        // a dollar payment set among them under the loan's own symbol would be
+        // a wrong number in the column a user checks hardest.
+        val interestOf = interestPart
+            ?: amount.takeIf { sameCurrency && kind == LoanMovementKind.INTEREST }
+        val principalOf = principalPart
+            ?: amount.takeIf { sameCurrency && kind == LoanMovementKind.PRINCIPAL }
         return LedgerRow(
             id = entryId,
             date = date,
@@ -224,15 +280,19 @@ class LoanLedgerViewModel @Inject constructor(
             amount = paidIn.formatCompact(amount),
             converted = base.formatCompact(baseAmount)
                 .takeIf { !currencyCode.equals(baseCode, ignoreCase = true) },
+            balanceBefore = balanceBefore?.let { own.formatCompact(it) },
+            workingInterest = interestOf?.let { own.formatCompact(it) },
+            workingPrincipal = principalOf?.let { own.formatCompact(it) },
             balanceAfter = balanceAfter?.let { own.formatCompact(it) },
-            splitPrincipal = principalPart?.let { own.formatCompact(it) },
-            splitInterest = interestPart?.let { own.formatCompact(it) },
             accountName = accountName,
             // An instalment's note defaults to the loan's own name, which the
             // heading above already carries. Only a note the user wrote
             // themselves says anything a second line is worth spending on.
             note = note?.takeIf { it != loan.name },
             increases = increases,
+            // Everything a debt has had done to it can be taken back off it.
+            // The debt itself arriving cannot — see [LedgerRow.canDelete].
+            canDelete = kind != LoanMovementKind.OPENING,
         )
     }
 

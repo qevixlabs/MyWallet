@@ -1,5 +1,7 @@
 package com.mywallet.ui.screens
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -37,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -45,8 +48,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -88,35 +93,36 @@ import androidx.compose.material3.SnackbarResult
  * memory of it — which is the only thing money between people is ever settled
  * by.
  *
- * **A row opens the payment it is a line about.** Every row here is an entry —
- * the money really left an account on a day — so a tap goes to that entry, the
- * way a tap on any other list of movements in the app does. It used to open the
- * *account* instead, which answered a question nobody had arrived with: a reader
- * on this page is checking one payment, and the row that describes it led
- * anywhere except to it.
+ * **A row turns over and shows its working.** A tap does not open an editor: the
+ * rows on this page are the app's own record of what the debt did — an instalment
+ * its rule wrote, the interest its rate charged, the balance its schedule arrived
+ * at — and every figure on them is read back out of the loan rather than stored
+ * on the row. Sending a tap to the entry form offered to retype an instalment the
+ * schedule would go on quoting its own figure for, which is a second opinion this
+ * page has no way to honour. An amount that was genuinely mistyped is corrected on
+ * the card that recorded it, which is where the app took it in.
  *
- * It was withheld altogether before that, on the reasoning that a payment's
- * amount is corrected where it was recorded and that changing a figure here
- * would edit an entry whose effect on the balance lives in the loan. That is a
- * reason for the *editor* to be careful — and it is; a loan's instalment opens
- * with its schedule controls withheld — not a reason for the only list of a
- * debt's payments to be the one list in the app that leads nowhere.
+ * What a reader actually arrives here with is *why did रू 10,984 barely move the
+ * balance?*, and the row now answers it in place. The two facts that answer it
+ * used to be on the front: the split crushed into a sentence under the date, and
+ * what was left stranded at the foot of the amount column — three unrelated
+ * remarks in three corners of one row, none of them saying they were parts of a
+ * single sum. Turned over, they are that sum, with the figure it was worked out
+ * *from* — which the front never carried at all and without which the reader had
+ * the answer and neither of the numbers behind it. See [LedgerRowWorking].
  *
- * A row is also swiped away — every movement, the instalments included. Removing
- * one puts the debt back where the payment found it: a lump sum's money goes back
- * on the balance, and an instalment leaves a period that charged its interest and
- * cleared nothing, which the next payment then collects. See [Arrears].
+ * A row is swiped away — every payment, the instalments included. Removing one
+ * puts the debt back where the payment found it: a lump sum's money goes back on
+ * the balance, and an instalment leaves a period that charged its interest and
+ * cleared nothing, which the next payment then collects. See [Arrears]. **The one
+ * row that stays is the debt arriving**, which is not something that happened to
+ * the loan but the loan itself — see [LedgerRow.canDelete].
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoanLedgerScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    /**
-     * Opens the payment itself — the entry that recorded it, which is where its
-     * date, its amount and the account it left are written down.
-     */
-    onOpenEntry: (String) -> Unit = {},
     viewModel: LoanLedgerViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -129,6 +135,13 @@ fun LoanLedgerScreen(
     // has no Undo behind it at all, and a payment removed by a stray thumb moves
     // the debt.
     var confirming by remember { mutableStateOf<String?>(null) }
+    // Which rows are showing their working. A list rather than a single id, so
+    // two instalments can be turned over at once: what a reader is usually doing
+    // with this page is watching the split move from one payment to the next,
+    // and a page that turned the last row back every time it turned a new one
+    // would answer that question one half at a time. Saved for the reason the
+    // page count is: a rotation must not fold the reader's work back up.
+    val turned = rememberSaveable { mutableStateListOf<String>() }
     // And says so once it has gone, the way every other list that removes a
     // movement does. A row vanishing from under the thumb with nothing said
     // reads as the page having glitched rather than as the delete landing.
@@ -247,9 +260,12 @@ fun LoanLedgerScreen(
                             // rather than the red shows through the gap.
                             paint = !row.canDelete,
                         )
-                        // Every row swipes away, an instalment included — see
-                        // [LedgerRow.canDelete]. The flag survives for the day
-                        // something here genuinely cannot be undone.
+                        // Every payment swipes away, an instalment included; the
+                        // debt arriving does not — see [LedgerRow.canDelete].
+                        val turn = {
+                            if (!turned.remove(row.id)) turned.add(row.id)
+                            Unit
+                        }
                         if (row.canDelete) {
                             SwipeToDelete(
                                 rowKey = row.id,
@@ -261,7 +277,8 @@ fun LoanLedgerScreen(
                                     row = row,
                                     isLent = state.isLent,
                                     kind = state.kind,
-                                    onOpenEntry = onOpenEntry,
+                                    turned = row.id in turned,
+                                    onTurn = turn,
                                     modifier = banded,
                                 )
                             }
@@ -270,7 +287,8 @@ fun LoanLedgerScreen(
                                 row = row,
                                 isLent = state.isLent,
                                 kind = state.kind,
-                                onOpenEntry = onOpenEntry,
+                                turned = row.id in turned,
+                                onTurn = turn,
                                 modifier = paper.then(banded),
                             )
                         }
@@ -458,12 +476,18 @@ private fun LedgerRowDate(date: java.time.LocalDate) {
 }
 
 /**
- * One line of the statement: when, what, how much, and what was left.
+ * One line of the statement, and the working behind it on the other side.
  *
- * The balance sits under the amount rather than in a column of its own. A phone
- * cannot give four columns enough room to stay readable in either script, and
- * the figure that matters most — what changed hands — must never be the one that
- * gets squeezed.
+ * **Both faces are always composed, one of them invisible**, so the box is as
+ * tall as the taller of the two whichever way it is showing. Drawing only the
+ * face in view is a row that changes height in the middle of a turn — the rows
+ * below it jump a few points as the card goes edge-on, which reads as the list
+ * having reflowed rather than as one card turning. The cost is a few extra lines
+ * of text laid out per row and nothing else; the hidden face is taken out of the
+ * semantics tree as well, or every row would be read aloud twice.
+ *
+ * A row with nothing behind it does not turn at all — see [LedgerRow.hasWorking].
+ * A card that turns to a blank back is worse than one that does not turn.
  */
 @Composable
 private fun LedgerRowView(
@@ -471,20 +495,94 @@ private fun LedgerRowView(
     isLent: Boolean,
     /** Which debt this is: what a movement is *called* depends on it. */
     kind: LoanKind?,
+    /** Whether this row is showing its working rather than the payment. */
+    turned: Boolean,
+    onTurn: () -> Unit,
     modifier: Modifier = Modifier,
-    onOpenEntry: (String) -> Unit = {},
+) {
+    // Kept as the state rather than unwrapped by `by`: read inside a
+    // `graphicsLayer` block the angle is a draw-phase read, so a turning row
+    // repaints without recomposing — read out here it would recompose every
+    // row on the page once per frame of the animation.
+    val turn = animateFloatAsState(
+        targetValue = if (turned) 180f else 0f,
+        // Long enough to read as an object turning over rather than as the row
+        // having been swapped for a different one, which is the whole of what
+        // the animation is for: the reader has to see that these figures belong
+        // to the line they just tapped.
+        animationSpec = tween(durationMillis = 360),
+        label = "ledgerRowTurn",
+    )
+    val turnLabel = stringResource(
+        if (turned) R.string.loan_working_hide else R.string.loan_working_show
+    )
+    Box(
+        // The shorter face sits in the middle of the taller one's height rather
+        // than at the top of it. Left to the default the front of a three-line
+        // row hung from the top of a box measured for the back's four, and every
+        // unturned row on the page read as having a blank line under it.
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .fillMaxWidth()
+            // Says what the tap does to a reader who cannot see the card turn.
+            // A row is not a button and takes no role: what it is is a line of a
+            // statement, and the label is what happens if you touch it.
+            .then(
+                if (row.hasWorking) {
+                    Modifier.clickable(onClickLabel = turnLabel) { onTurn() }
+                } else {
+                    Modifier
+                }
+            )
+            .graphicsLayer {
+                rotationY = turn.value
+                // Well back from the default. Close in, a full-width row turning
+                // on its own axis swings its far edge most of the way across the
+                // page and reads as a door rather than as a card.
+                cameraDistance = 24f * density
+            },
+    ) {
+        Box(
+            modifier = Modifier
+                .graphicsLayer { alpha = if (turn.value > 90f) 0f else 1f }
+                .then(if (turned) Modifier.clearAndSetSemantics {} else Modifier)
+        ) {
+            LedgerRowFace(row = row, isLent = isLent, kind = kind)
+        }
+        Box(
+            modifier = Modifier
+                .graphicsLayer {
+                    // Turned back the other way, or the words come out mirrored.
+                    rotationY = 180f
+                    alpha = if (turn.value > 90f) 1f else 0f
+                }
+                .then(if (turned) Modifier else Modifier.clearAndSetSemantics {})
+        ) {
+            LedgerRowWorking(row = row, isLent = isLent)
+        }
+    }
+}
+
+/**
+ * The face of the row: when, what, and how much.
+ *
+ * What the payment *did* is no longer here. The split under the date and the
+ * balance under the amount were two thirds of one sum drawn in two corners of
+ * the row, and between them they made the front of every instalment five lines
+ * deep. They are on the back now, where they add up — see [LedgerRowWorking].
+ */
+@Composable
+private fun LedgerRowFace(
+    row: LedgerRow,
+    isLent: Boolean,
+    kind: LoanKind?,
 ) {
     val colors = WalletTheme.colors
     val dates = LocalDateDisplay.current
 
     Row(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
-            // Opens the payment itself. Every row on this page is an entry —
-            // [LedgerRow.id] *is* its id — so there is always somewhere to go,
-            // and the page it goes to is the one that answers what a reader
-            // checking a line on a statement has come to ask.
-            .clickable { onOpenEntry(row.id) }
             // Inset from the paper's edge rather than from the page's, the way
             // a card's rows are — see [listPanel].
             .padding(horizontal = LIST_PANEL_ROW_INSET, vertical = 12.dp),
@@ -549,20 +647,6 @@ private fun LedgerRowView(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            // What the instalment bought. Early on most of it is interest, and a
-            // debt that barely moved after a full payment reads as the app
-            // having lost the money unless the row says why.
-            if (row.splitPrincipal != null && row.splitInterest != null) {
-                Text(
-                    text = stringResource(
-                        R.string.loan_emi_split,
-                        row.splitPrincipal,
-                        row.splitInterest,
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
         }
         Spacer(Modifier.width(12.dp))
         Column(horizontalAlignment = Alignment.End) {
@@ -574,12 +658,12 @@ private fun LedgerRowView(
                 // happened — while the card above it was already counting the
                 // same figure into "paid so far, interest included".
                 //
-                // What that payment did to the *debt* is the balance line
-                // underneath, which is the column for it: "Left after it" repeats
-                // the previous figure on these rows, because servicing interest
-                // leaves the balance exactly where it was. That is the honest
-                // division of labour, and it is why the sign here no longer tries
-                // to say both things at once.
+                // What that payment did to the *debt* is the other face of the
+                // row, which is the place for it: turned over, a serviced charge
+                // says it was owing so much, all of the payment was interest, and
+                // so much is owing still — the same figure top and bottom, which
+                // is the fact, stated. That is the honest division of labour, and
+                // it is why the sign here does not try to say both things at once.
                 text = if (row.increases) "+" + row.amount else "−" + row.amount,
                 style = MoneySmallStyle,
                 color = when {
@@ -597,14 +681,136 @@ private fun LedgerRowView(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            row.balanceAfter?.let {
-                Text(
-                    text = stringResource(R.string.loan_schedule_left, it),
-                    style = MaterialTheme.typography.bodySmall,
+        }
+    }
+}
+
+/**
+ * The back of the row: the sum the front is the answer to.
+ *
+ * Four lines, in the order the arithmetic actually runs — what was owed when the
+ * payment landed, what the lender took out of it first, what was left over to
+ * come off the debt, and what that leaves owing. The last is ruled off from the
+ * three above it and set in the money type, because it is the answer and the
+ * others are the working; without the rule the block reads as four remarks in a
+ * column and a reader has to work out for themselves which of them is the total.
+ *
+ * **Any line may be missing and none of them is invented to fill the gap.** The
+ * app knows an instalment's split only from the schedule, which is the only thing
+ * that can say how much of a payment the lender kept; a lump sum and a serviced
+ * charge need no schedule, being all principal and all interest by definition;
+ * and a loan re-based by a lump sum has no record of the balance it used to
+ * carry. A face of two true lines is worth more than four with a guess in it.
+ *
+ * **The day stays where it was**, at the head of both faces. It is what a row is
+ * called on this page, and a card that turned to a set of figures with nothing
+ * naming which payment they belong to would be a different row rather than the
+ * back of this one.
+ */
+@Composable
+private fun LedgerRowWorking(row: LedgerRow, isLent: Boolean) {
+    val colors = WalletTheme.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = LIST_PANEL_ROW_INSET, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        LedgerRowDate(date = row.date)
+        Spacer(Modifier.width(with(LocalDensity.current) { DayNumberStyle.fontSize.toDp() / 3 }))
+        Column(modifier = Modifier.weight(1f)) {
+            row.balanceBefore?.let {
+                WorkingLine(
+                    label = stringResource(
+                        if (isLent) R.string.loan_working_before_lent else R.string.loan_working_before
+                    ),
+                    value = it,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            // Interest first, because it is charged first: the lender takes what
+            // the period cost and only what is over comes off the debt. Coloured
+            // the way the summary card colours the interest built up on the same
+            // page — money the borrower is out and the lender is up.
+            row.workingInterest?.let {
+                WorkingLine(
+                    label = stringResource(R.string.loan_working_interest),
+                    value = it,
+                    color = if (isLent) colors.moneyIn else colors.debt,
+                )
+            }
+            row.workingPrincipal?.let {
+                WorkingLine(
+                    label = stringResource(
+                        if (isLent) {
+                            R.string.loan_working_principal_lent
+                        } else {
+                            R.string.loan_working_principal
+                        }
+                    ),
+                    value = it,
+                    // The one part of the payment that bought anything, in the
+                    // colour the page already gives what has been paid off.
+                    color = colors.moneyIn,
+                )
+            }
+            row.balanceAfter?.let {
+                // Ruled off only when there is working above it to rule off. On
+                // a row that can say nothing but the balance, a line over the
+                // single figure would be a total of nothing.
+                if (row.balanceBefore != null ||
+                    row.workingInterest != null ||
+                    row.workingPrincipal != null
+                ) {
+                    Hairline(modifier = Modifier.padding(top = 4.dp, bottom = 4.dp))
+                }
+                WorkingLine(
+                    label = stringResource(
+                        if (isLent) R.string.loan_working_after_lent else R.string.loan_working_after
+                    ),
+                    value = it,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    isAnswer = true,
+                )
+            }
         }
+    }
+}
+
+/**
+ * One line of the working: what it is on the left, how much on the right.
+ *
+ * The label is weighted and the figure is not, so a long label in either script
+ * gives way and the money keeps its width — the same division every row on this
+ * page makes between its words and its amount.
+ */
+@Composable
+private fun WorkingLine(
+    label: String,
+    value: String,
+    color: Color,
+    /** The total, set in the money type so it is found without being read. */
+    isAnswer: Boolean = false,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Spacer(Modifier.width(12.dp))
+        Text(
+            text = value,
+            style = if (isAnswer) MoneySmallStyle else MaterialTheme.typography.bodySmall,
+            color = color,
+            maxLines = 1,
+        )
     }
 }
 
