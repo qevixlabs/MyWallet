@@ -393,7 +393,20 @@ fun DayLabel(
                     .height(0.dp)
                     .wrapContentHeight(unbounded = true),
             )
-            Spacer(Modifier.width(8.dp))
+            // A share of the figure's own size rather than a gap picked by eye:
+            // the two are one object, so the space between them has to hold when
+            // the type is resized — by a change here, or by the reader's own
+            // font-scale setting, which scales the digits and would leave a
+            // fixed gap looking wrong at both ends of that range.
+            //
+            // **It has to beat the space inside the figure.** Devanagari digits
+            // are drawn with wide bearings, so "१६" already has a gap down its
+            // middle, and a heading whose date and weekday sat that same
+            // distance apart read as three things — a 1, a 6 and a Saturday.
+            // Nothing can close the gap inside the number (see [DayNumberStyle]
+            // on what negative tracking does to it), so what makes it one number
+            // is the larger space that follows it.
+            Spacer(Modifier.width(with(LocalDensity.current) { DayNumberStyle.fontSize.toDp() / 2 }))
         }
         Column {
             Text(

@@ -127,7 +127,18 @@ class DateDisplay(
      * have no accepted abbreviation — "श्राव" is not a thing anybody writes.
      */
     private val gregorianMonthYear = DateTimeFormatter.ofPattern("MMM yyyy", locale)
-    private val weekday = DateTimeFormatter.ofPattern("EEEE", locale)
+    /**
+     * The weekday, in Nepali on a Nepali page whatever language the interface is
+     * in — the same rule the dates themselves follow, and for the same reason:
+     * somebody reading a patro reads शनिबार, and "Saturday" over a Devanagari
+     * date is half a translation. The names come from the platform's own Nepali
+     * data rather than a list kept here, which is where every other month and
+     * day name in this app comes from.
+     */
+    private val weekday = DateTimeFormatter.ofPattern(
+        "EEEE",
+        if (nepaliScript) NEPALI else locale,
+    )
     /**
      * The two halves of [dayAndMonth], available separately.
      *
@@ -246,4 +257,9 @@ class DateDisplay(
 
     /** The month window immediately after [window]. */
     fun nextMonth(window: DateWindow): DateWindow = monthWindow(window.endExclusive)
+
+    private companion object {
+        /** For the words a Nepali page is written in — see [weekday]. */
+        val NEPALI: Locale = Locale.forLanguageTag("ne-NP")
+    }
 }

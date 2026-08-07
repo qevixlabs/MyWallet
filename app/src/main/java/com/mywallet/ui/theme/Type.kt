@@ -130,17 +130,30 @@ val DayLabelStyle: TextStyle = TextStyle(
  * contributing to it, so a day of one line is no taller for having a date at the
  * head of it. See [DayLabel].
  *
- * Tabular, so the days keep one edge down the page whatever digits they are made
- * of; Devanagari has no tabular figures of its own and does not need them, its
- * digits being even in width already.
+ * **Not tabular**, which is the one place in this app that figures are not.
+ * Tabular figures are all one width so that columns of them line up, and the
+ * width they share is the widest digit's, so a 1 carries empty space on either
+ * side of it. There is no column here to line up — the date sits at the head of
+ * its own heading with words after it — and what it needs is to be as wide as it
+ * is.
+ *
+ * **And not tracked in, however tempting.** Devanagari digits carry generous
+ * side bearings of their own, so "१६" is drawn with a visible gap down the
+ * middle, and closing it with negative letter spacing is the obvious fix. It is
+ * also a broken one: past about a point of it Android stops drawing the second
+ * digit altogether, and a day of the 16th is headed "१" — a wrong date, which is
+ * far worse than a loose one. Tested at −1sp and −2sp, and at the same amounts
+ * written in `em`; all four lose the digit. What separates the figure from the
+ * words instead is the space after it, which [DayLabel] sets wider than the
+ * space inside it.
  */
 val DayNumberStyle: TextStyle = TextStyle(
     fontFamily = FontFamily.Default,
     fontWeight = FontWeight.SemiBold,
+    fontStyle = FontStyle.Normal,
     fontSize = 26.sp,
     lineHeight = 32.sp,
-    letterSpacing = (-0.5).sp,
-    fontFeatureSettings = TABULAR,
+    letterSpacing = 0.sp,
 )
 
 /**

@@ -54,6 +54,35 @@ class DateDisplayTest {
     }
 
     /**
+     * The figure counts in the calendar being read, never the other one in the
+     * other one's digits.
+     *
+     * 1 August 2026 falls on 16 Shrawan 2083, so a Nepali page heads that day
+     * "१६" and prints "1 Aug" underneath. Read quickly — and it was, when the
+     * digits were still tabular and sat a gap apart — "१६" looks like the
+     * English day written in Devanagari, which would be the app counting one
+     * calendar and labelling it the other.
+     */
+    @Test
+    fun `a Nepali day counts the Nepali month, not the English one`() {
+        val date = LocalDate.of(2026, 8, 1)
+        assertEquals("१६", nepali.dayNumber(date))
+        assertEquals("1 Aug", nepali.secondaryShort(date))
+        assertEquals("1", gregorian.dayNumber(date))
+    }
+
+    /**
+     * A Nepali page is written in Nepali, whatever language the interface is set
+     * to — the same rule the dates already followed.
+     */
+    @Test
+    fun `a Nepali page names its weekdays in Nepali`() {
+        val saturday = LocalDate.of(2026, 8, 1)
+        assertEquals("शनिबार", nepali.weekdayName(saturday))
+        assertEquals("Saturday", gregorian.weekdayName(saturday))
+    }
+
+    /**
      * Outside the library's table the calendar has already fallen back to
      * Gregorian for that day — the figure has to fall back with it, or the
      * margin says a Gregorian day in Devanagari beside a Gregorian date in Latin.

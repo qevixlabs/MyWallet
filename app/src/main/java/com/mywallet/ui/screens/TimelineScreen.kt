@@ -862,15 +862,9 @@ private fun BalanceRow(
  * The date's own figure leads, big enough to scroll to — and in whichever
  * calendar is being read, so a Nepali page is counted in Nepali days and a
  * Gregorian one in Gregorian days. The words beside it are what the figure alone
- * cannot say: the month it belongs to, the weekday where that is worth a line —
- * see [weekday] — and, on a Nepali page, the English date the same way a printed
- * patro puts it in the corner of a cell.
- *
- * The month is there because the figure needs it. A day number is only a date
- * once something says which month it counts in, and on this page that is not
- * always the month in the stepper above: a Bikram Sambat month straddles two
- * Gregorian ones, and the days still to come run past the end of the month
- * being read.
+ * cannot say: the weekday, where that is worth a line — see [weekday] — and then
+ * one line more, which is the English date on a Nepali page, the way a printed
+ * patro puts it in the corner of a cell, and the month on a Gregorian one.
  *
  * Written once and used by both headings on this page — a day that has happened
  * and a day still to come. They are the same list read in two directions and
@@ -893,12 +887,23 @@ private fun DayHeading(
     weekday: Boolean = true,
 ) {
     val dates = LocalDateDisplay.current
-    val month = dates.monthName(date)
-    val gregorian = dates.secondaryShort(date)
+    // The one line of words that is not the weekday.
+    //
+    // On a Nepali page that is the English date and nothing else. It used to
+    // carry the Nepali month as well, which the stepper at the top of the page
+    // has just said in larger type — the heading was repeating साउन down a
+    // column of days inside साउन. What the reader cannot get from anywhere else
+    // on the page is which English day this is, so that is what stays.
+    //
+    // On a Gregorian page there is no second date to print, and the month is
+    // what is left. It is arguably saying the stepper's word twice there too,
+    // but a bare weekday under a bare figure reads as a heading with something
+    // missing, and the month is what completes the date the figure started.
+    val rest = dates.secondaryShort(date) ?: dates.monthName(date)
     DayLabel(
         day = dates.dayNumber(date),
-        primary = if (weekday) dates.weekdayName(date) else month,
-        secondary = listOfNotNull(month.takeIf { weekday }, gregorian).joinToString(" · "),
+        primary = if (weekday) dates.weekdayName(date) else rest,
+        secondary = rest.takeIf { weekday },
         modifier = modifier,
     )
 }
