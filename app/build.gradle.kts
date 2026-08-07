@@ -58,8 +58,8 @@ android {
         applicationId = "com.qevixlabs.mywallet"
         minSdk = 26
         targetSdk = 36
-        versionCode = 210
-        versionName = "1.0.2"
+        versionCode = 211
+        versionName = "1.0.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }

@@ -128,6 +128,15 @@ class DateDisplay(
      */
     private val gregorianMonthYear = DateTimeFormatter.ofPattern("MMM yyyy", locale)
     private val weekday = DateTimeFormatter.ofPattern("EEEE", locale)
+    /**
+     * The two halves of [dayAndMonth], available separately.
+     *
+     * Formatted through the locale exactly as the joined form is, so a day drawn
+     * on its own and the same day drawn inside a fuller date cannot come out in
+     * two different sets of digits on the same page.
+     */
+    private val gregorianDay = DateTimeFormatter.ofPattern("d", locale)
+    private val gregorianMonth = DateTimeFormatter.ofPattern("MMM", locale)
 
     /** Falls back to Gregorian outside the BS table rather than throwing at the user. */
     private fun useBs(date: LocalDate): Boolean =
@@ -152,6 +161,28 @@ class DateDisplay(
             "${number(bs.day)} ${BikramSambat.monthName(bs.month, nepaliScript)}"
         } else {
             date.format(gregorianDayMonth)
+        }
+
+    /**
+     * "26" or "१०" — the day of the month alone, for a list that draws the date
+     * as a figure in its own margin rather than as a line of words.
+     *
+     * In whichever calendar is being read, which is the whole point: on a page
+     * of Bikram Sambat the big figure a reader counts days by has to be the
+     * Nepali one, in the digits the rest of that date is printed in. Where a
+     * date falls outside the BS table the calendar has already fallen back to
+     * Gregorian for that day — see [useBs] — and this falls back with it, rather
+     * than printing a Gregorian day in Devanagari.
+     */
+    fun dayNumber(date: LocalDate): String =
+        if (useBs(date)) number(BikramSambat.fromGregorian(date).day) else date.format(gregorianDay)
+
+    /** "Jul" or "श्रावण" — the other half of [dayAndMonth]. */
+    fun monthName(date: LocalDate): String =
+        if (useBs(date)) {
+            BikramSambat.monthName(BikramSambat.fromGregorian(date).month, nepaliScript)
+        } else {
+            date.format(gregorianMonth)
         }
 
     /** "July 2026" or "श्रावण २०८३" — the heading above a month's figures. */

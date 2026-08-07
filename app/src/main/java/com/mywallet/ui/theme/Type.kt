@@ -110,6 +110,27 @@ val DayLabelStyle: TextStyle = TextStyle(
 )
 
 /**
+ * The day of the month, drawn big in the margin of the timeline.
+ *
+ * This is the one figure on a day's heading that is not a word: it is what the
+ * eye lands on while scrolling a month, so it is set at more than twice the size
+ * of the label beside it and left upright — [DayLabelStyle]'s italic is what says
+ * "this is the margin, not a row", and a number leaning over at this size reads
+ * as a design flourish rather than as a date. Tabular, so the days keep one edge
+ * down the page whatever digits they are made of; Devanagari has no tabular
+ * figures of its own and does not need them, its digits being even in width
+ * already.
+ */
+val DayNumberStyle: TextStyle = TextStyle(
+    fontFamily = FontFamily.Default,
+    fontWeight = FontWeight.SemiBold,
+    fontSize = 26.sp,
+    lineHeight = 30.sp,
+    letterSpacing = (-1).sp,
+    fontFeatureSettings = TABULAR,
+)
+
+/**
  * What a day came to, beside the day itself.
  *
  * [DayLabelStyle] with tabular figures, which is the one thing money never gives

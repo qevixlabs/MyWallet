@@ -76,6 +76,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.mywallet.R
 import com.mywallet.ui.theme.DayLabelStyle
+import com.mywallet.ui.theme.DayNumberStyle
 import com.mywallet.ui.theme.WalletTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarHost
@@ -333,33 +334,71 @@ fun SectionHeader(
  * One definition, used by every list that groups by day: a month's real entries
  * and the days still to come are the same list read in two directions, and a
  * heading that was quiet on one and loud on the other made them look like two
- * different pages. [secondary] is the weekday and the other calendar's date,
+ * different pages. [secondary] is the month and the other calendar's date,
  * quieter again.
+ *
+ * The one loud thing on it is [day], the date's own figure in the margin — see
+ * the note on that parameter.
  */
 @Composable
 fun DayLabel(
     primary: String,
     secondary: String?,
     modifier: Modifier = Modifier,
+    /**
+     * The day of the month alone, drawn big in the margin to the left of the
+     * two lines — the bullet the day's rows hang off.
+     *
+     * A month scrolled past is a column of near-identical grey captions, and
+     * finding the 14th in it meant reading the 12th and the 13th to rule them
+     * out. The figure is what the eye lands on instead, and it is in whichever
+     * calendar is being read — see [DateDisplay.dayNumber] — because the number
+     * somebody counts days by on a Nepali page is the Nepali one.
+     *
+     * Null where a heading names something other than a day of the month.
+     */
+    day: String? = null,
 ) {
-    Column(modifier = modifier) {
-        Text(
-            text = primary,
-            // One named style, so the figures drawn beside this on the same
-            // heading can be set in exactly it — see [DayTotalStyle].
-            style = DayLabelStyle,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        secondary?.takeIf { it.isNotEmpty() }?.let {
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+        day?.let {
             Text(
                 text = it,
-                style = MaterialTheme.typography.labelSmall,
-                fontStyle = FontStyle.Italic,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = DayNumberStyle,
+                color = MaterialTheme.colorScheme.onSurface,
+                // Set to the right of a fixed gutter, the way any column of
+                // figures is: the 9th and the 30th head days on the same page,
+                // and the words beside them have to start at the same place or
+                // the column of headings reads as ragged. Centred instead, a
+                // single digit drifted away from its own weekday and left a gap
+                // wider than the one the two-digit days had.
+                textAlign = TextAlign.End,
+                maxLines = 1,
+                modifier = Modifier.width(DAY_NUMBER_GUTTER),
             )
+            Spacer(Modifier.width(12.dp))
+        }
+        Column {
+            Text(
+                text = primary,
+                // One named style, so the figures drawn beside this on the same
+                // heading can be set in exactly it — see [DayTotalStyle].
+                style = DayLabelStyle,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            secondary?.takeIf { it.isNotEmpty() }?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontStyle = FontStyle.Italic,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
+
+/** Wide enough for two digits of [DayNumberStyle] with nothing to spare. */
+private val DAY_NUMBER_GUTTER = 36.dp
 
 /**
  * The name of a block of rows that is not a list of movements — "Accounts",

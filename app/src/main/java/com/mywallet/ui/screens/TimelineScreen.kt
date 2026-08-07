@@ -93,6 +93,7 @@ import com.mywallet.ui.theme.MoneySmallStyle
 import com.mywallet.ui.theme.TutorialLight
 import com.mywallet.ui.theme.WalletTheme
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 /**
  * What separates one day's paper from the next. Small: the days are one log read
@@ -139,7 +140,6 @@ fun TimelineScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val filter by viewModel.filter.collectAsStateWithLifecycle()
     val blocked by viewModel.blockedByLaterPayment.collectAsStateWithLifecycle()
-    val dates = LocalDateDisplay.current
     val money = LocalMoneyFormatter.current
     val scope = rememberCoroutineScope()
 
@@ -327,14 +327,7 @@ fun TimelineScreen(
                             .padding(horizontal = LIST_PANEL_ROW_INSET, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        DayLabel(
-                            primary = dates.dayAndMonth(day.date),
-                            secondary = listOfNotNull(
-                                dates.weekdayName(day.date),
-                                dates.secondaryShort(day.date),
-                            ).joinToString(" · "),
-                            modifier = Modifier.weight(1f),
-                        )
+                        DayHeading(date = day.date, modifier = Modifier.weight(1f))
                         DayTotalText(moneyIn = day.moneyIn, moneyOut = day.moneyOut)
                     }
                     DashedRule(modifier = Modifier.padding(start = LIST_PANEL_ROW_INSET))
@@ -462,8 +455,7 @@ fun TimelineScreen(
                 }
                 stickyHeader(key = "uh-${day.date.toEpochDay()}") {
                     ProjectedDayHeader(
-                        primaryDate = dates.dayAndMonth(day.date),
-                        secondaryDate = dates.secondaryShort(day.date),
+                        date = day.date,
                         balanceText = stringResource(
                             R.string.projected_balance,
                             money.formatCompact(day.balanceAfter),
@@ -865,6 +857,39 @@ private fun BalanceRow(
 }
 
 /**
+ * Which day a block of rows falls on, written the one way this page writes it.
+ *
+ * The date's own figure leads, big enough to scroll to — and in whichever
+ * calendar is being read, so a Nepali page is counted in Nepali days and a
+ * Gregorian one in Gregorian days. The words beside it are what the figure alone
+ * cannot say: the weekday, then the month it belongs to and, on a Nepali page,
+ * the English date the same way a printed patro puts it in the corner of a cell.
+ *
+ * The month is there because the figure needs it. A day number is only a date
+ * once something says which month it counts in, and on this page that is not
+ * always the month in the stepper above: a Bikram Sambat month straddles two
+ * Gregorian ones, and the days still to come run past the end of the month
+ * being read.
+ *
+ * Written once and used by both headings on this page — a day that has happened
+ * and a day still to come. They are the same list read in two directions and
+ * cannot be lettered two ways.
+ */
+@Composable
+private fun DayHeading(date: LocalDate, modifier: Modifier = Modifier) {
+    val dates = LocalDateDisplay.current
+    DayLabel(
+        day = dates.dayNumber(date),
+        primary = dates.weekdayName(date),
+        secondary = listOfNotNull(
+            dates.monthName(date),
+            dates.secondaryShort(date),
+        ).joinToString(" · "),
+        modifier = modifier,
+    )
+}
+
+/**
  * The heading over a future day: which day, and the balance once it has run.
  *
  * Sticky, exactly as the heading over a day that has already happened is. It
@@ -874,8 +899,7 @@ private fun BalanceRow(
  */
 @Composable
 private fun ProjectedDayHeader(
-    primaryDate: String,
-    secondaryDate: String?,
+    date: LocalDate,
     balanceText: String,
     negative: Boolean,
 ) {
@@ -892,15 +916,12 @@ private fun ProjectedDayHeader(
                 .background(WalletTheme.colors.rowBand)
                 .padding(horizontal = LIST_PANEL_ROW_INSET, vertical = 10.dp),
         ) {
-            // The same day label the days behind us wear. A day still to come is
-            // a day: set in `titleSmall` it was the one heading on the page in a
-            // different voice, and an EMI's date read louder than the date of
-            // the rent that has already gone out.
-            DayLabel(
-                primary = primaryDate,
-                secondary = secondaryDate,
-                modifier = Modifier.weight(1f),
-            )
+            // The same day heading the days behind us wear, down to the figure
+            // in the margin. A day still to come is a day: set in `titleSmall`
+            // it was the one heading on the page in a different voice, and an
+            // EMI's date read louder than the date of the rent that has already
+            // gone out.
+            DayHeading(date = date, modifier = Modifier.weight(1f))
             Text(
                 text = balanceText,
                 style = MoneySmallStyle,
