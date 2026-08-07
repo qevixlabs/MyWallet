@@ -770,6 +770,7 @@ private fun LedgerRowFace(
 @Composable
 private fun LedgerRowWorking(row: LedgerRow, isLent: Boolean) {
     val colors = WalletTheme.colors
+    val dates = LocalDateDisplay.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -779,6 +780,16 @@ private fun LedgerRowWorking(row: LedgerRow, isLent: Boolean) {
         LedgerRowMark(row = row, isLent = isLent)
         Spacer(Modifier.width(MOVEMENT_MARK_GAP))
         Column(modifier = Modifier.weight(1f)) {
+            // Why there is nothing to add up, on the rows a lump sum left behind
+            // — see [LedgerRow.replacedOn]. It stands instead of the figures
+            // rather than beside them: there are none to stand beside.
+            row.replacedOn?.let {
+                Text(
+                    text = stringResource(R.string.loan_working_replaced, dates.full(it)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             row.balanceBefore?.let {
                 WorkingLine(
                     label = stringResource(

@@ -574,8 +574,6 @@ fun EntryRow(
             // the same payment two different things — with whatever the user
             // wrote about it on the end. Shared with the account statement for
             // the same reason; see [loanMovementLabel].
-            val loanAction = loanMovementLabel(entry)
-
             // Named the same way every other list names it — the statement of
             // the account it passed through included. See [entryTitle].
             RouteText(
@@ -602,11 +600,27 @@ fun EntryRow(
                     drawRoute.takeIf { ownNote != null },
                 )
                 entry.isLoanIncrease || entry.isLoanSettlement -> listOfNotNull(
-                    // The person is the title on every one of these rows now,
-                    // note or no note, so this line no longer has to put them
-                    // back — what it says is what the payment did, and what the
-                    // user wrote about it.
-                    loanAction,
+                    // **Which debt, named the way a holding is named.** What the
+                    // payment did is the title on every one of these rows now —
+                    // see [entryTitle] — so this line answers the question the
+                    // title cannot: which arrangement it moved. The bare name is
+                    // not enough where a bank holds three things under one word,
+                    // so it takes its kind and its currency, exactly as the
+                    // account on any other row does. A debt with a person needs
+                    // no kind: "Dad" is the whole of what it is called.
+                    //
+                    // The currency only where nothing else on the line carries
+                    // it — an account is named with its own, and "Sita (NPR) ·
+                    // Cash (NPR)" is one fact said twice on a line four words
+                    // long. Withheld too where the row gives the currency a line
+                    // of its own, which is [showCurrency]'s whole purpose.
+                    loanRowLabel(entry.loanName, entry.loanKind, account)?.let {
+                        if (showCurrency || account != null) {
+                            it
+                        } else {
+                            "$it (${entry.currencyCode})"
+                        }
+                    },
                     account,
                 )
                 entry.isLoanPayment -> listOfNotNull(

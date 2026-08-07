@@ -56,6 +56,29 @@ data class LedgerRow(
     /** What was left owing afterwards, or null when the app cannot say. */
     val balanceAfter: String?,
     /**
+     * The day a lump sum re-set this loan, on the rows that fall before it.
+     *
+     * Those rows were paid against a schedule that is not on file any more: a
+     * lump sum rewrites the balance, the term, the carried interest and where
+     * the rule starts, all in place, so the debt they were instalments *of* no
+     * longer exists to be read. The ledger stops its walk at the current basis
+     * for exactly that reason, and the rows above the lump sum come back with
+     * nothing on them.
+     *
+     * **Which left half a statement quietly refusing to turn over.** A tap did
+     * nothing on them and the page gave no reason, so a reader who had just
+     * turned one row over and watched the next ignore them had every reason to
+     * think the app had broken. The rows still turn; what they show is the fact,
+     * stated. Nothing is invented to fill the gap — the split of a payment made
+     * against a schedule nobody kept cannot be worked out from what is left, and
+     * a plausible figure in the one column a user checks against their lender is
+     * worse than an honest sentence.
+     *
+     * A date rather than a finished string, unlike every money figure here: which
+     * calendar it is read in belongs to the screen, exactly as [date] does.
+     */
+    val replacedOn: LocalDate? = null,
+    /**
      * The holding the money passed through, named on the row — the bank it was
      * paid from, or the cash tin it was handed out of. Null on a payment that
      * names none: one the app generated for a day before it was told about the
@@ -119,7 +142,10 @@ data class LedgerRow(
         get() = balanceBefore != null ||
             workingInterest != null ||
             workingPrincipal != null ||
-            balanceAfter != null
+            balanceAfter != null ||
+            // A row with no figures still turns where there is a reason it has
+            // none — see [replacedOn]. Saying why is a second face worth having.
+            replacedOn != null
 }
 
 data class LoanLedgerState(
@@ -301,6 +327,14 @@ class LoanLedgerViewModel @Inject constructor(
             workingInterest = interestOf?.let { own.formatCompact(it) },
             workingPrincipal = principalOf?.let { own.formatCompact(it) },
             balanceAfter = balanceAfter?.let { own.formatCompact(it) },
+            // Paid against a schedule a later lump sum replaced — see
+            // [LedgerRow.replacedOn]. Told by the day the loan's own figures
+            // count from, which is the day the last re-basing moved it to: a
+            // debt that has never been re-based counts from the day it was
+            // borrowed, and nothing is in front of that.
+            replacedOn = loan.startedOn.takeIf {
+                loan.amortises && date < it && balanceAfter == null
+            },
             accountName = accountName,
             // An instalment's note defaults to the loan's own name, which the
             // heading above already carries. Only a note the user wrote

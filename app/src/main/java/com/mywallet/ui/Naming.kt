@@ -274,15 +274,21 @@ fun entryTitle(entry: MoneyEntry): String {
     val ownNote = entry.ownNote
     return when {
         entry.isOverdraftDraw -> ownNote ?: entry.overdraftRoute().orEmpty()
-        // The person, and the person whatever else was said. "Lent more" is true
-        // of every one of these rows and so distinguishes none of them — but a
-        // note the user typed into the payment card does not replace the name
-        // either: whose debt this is, is the one thing every row of the kind has
-        // to say, and a title reading "car repair" leaves the reader to work out
-        // which of three arrangements it moved. The note goes under it instead,
-        // on the end of what the payment did — see [loanMovementLabel].
+        // **What the movement was, with what the user said about it.** The debt's
+        // own name led these rows for a long while, on the reasoning that "Lent
+        // more" is true of every one of them and so distinguishes none, while
+        // whose debt it is, is the one thing such a row has to say.
+        //
+        // The name it actually led with is what settles it the other way. A bank
+        // holds three things under one word: a row titled "Nabil Bank" over
+        // "Payment - lomkl" never says *which* Nabil Bank the रू 4,30,000 came
+        // off, and the reader is left choosing between a savings account, a card
+        // and a loan. The debt is named underneath now, with its kind and its
+        // currency — "Nabil Bank Loan (NPR)" — which says more than the bare name
+        // ever did, so nothing is lost by moving it and the title is free to
+        // carry the one thing that told these rows apart in the first place.
         entry.isLoanIncrease || entry.isLoanSettlement ->
-            entry.loanName ?: ownNote.orEmpty()
+            loanMovementLabel(entry) ?: entry.loanName ?: ownNote.orEmpty()
         entry.isLoanPayment -> ownNote ?: stringResource(R.string.loan_movement_instalment)
         // A row attached to nothing at all — no note, no transfer, no debt — is
         // a "correct this balance". No list draws one except the statement of

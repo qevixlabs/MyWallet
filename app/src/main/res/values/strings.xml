@@ -642,6 +642,10 @@
     <string name="loan_working_principal_lent">Off what they owe</string>
     <string name="loan_working_after">Left owing</string>
     <string name="loan_working_after_lent">Left to come back</string>
+    <!-- A row paid against a schedule a later lump sum replaced. The split is
+         not on file any more and is not guessed at: the working says why it is
+         missing rather than the row quietly refusing to turn over. -->
+    <string name="loan_working_replaced">Paid against the schedule that the payment on %1$s replaced. What this one was made of is not on file any more.</string>
     <!-- What the tap does, said to a reader who cannot see the row turn. -->
     <string name="loan_working_show">See how it was worked out</string>
     <string name="loan_working_hide">Back to the payment</string>

@@ -134,6 +134,7 @@ import com.mywallet.ui.entryTitle
 import com.mywallet.ui.holdingLabel
 import com.mywallet.ui.labelRes
 import com.mywallet.ui.loanMovementLabel
+import com.mywallet.ui.loanRowLabel
 import com.mywallet.ui.theme.MoneyHeadlineStyle
 import com.mywallet.ui.theme.TitleStyle
 import com.mywallet.ui.theme.WalletTheme
@@ -3487,15 +3488,16 @@ internal fun StatementRowView(
                 text = entryTitle(row.entry),
                 style = MaterialTheme.typography.bodyMedium,
             )
-            // What a payment against a debt did to it, and what the user wrote
-            // about it — "Borrowed more - car repair". The title of such a row
-            // is the debt itself, so without this line an account's statement
-            // listed three payments to the same person and said nothing about
-            // any of them but the amount. Only where there is something to say:
-            // an ordinary movement is already named by its own note.
-            loanMovementLabel(row.entry)?.let {
+            // Which debt it moved. What the payment *did* is the title now —
+            // see [entryTitle] — so this line names the arrangement, the way the
+            // same row names it on every other list: with its kind and its
+            // currency, since a bank holds three things under one word and
+            // "Nabil Bank" alone does not say which of them a payment came off.
+            // It carried the movement label instead until the two lines swapped,
+            // and left that way it would print one sentence twice.
+            loanRowLabel(row.entry.loanName, row.entry.loanKind, null)?.let {
                 RouteText(
-                    text = it,
+                    text = "$it (${row.entry.currencyCode})",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -4424,9 +4426,9 @@ private fun LumpSumCard(state: HoldingEditorState, viewModel: HoldingEditorViewM
         // debt need no explaining — the debt is what they are about — but a run
         // of them down a statement is otherwise three identical rows, and the
         // one thing that tells them apart is what the two people said to each
-        // other at the time. It is never the row's *title*: whose debt this is
-        // stays on top and the note goes under it, on the end of what the
-        // payment did. See `loanMovementLabel`.
+        // other at the time. It joins the end of what the payment did, which is
+        // the row's title — "Borrowed more - school fee" over the debt it moved.
+        // See `loanMovementLabel`.
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(
             colors = editableFieldColors(),

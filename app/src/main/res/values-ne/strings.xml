@@ -450,6 +450,7 @@
     <string name="loan_working_principal_lent">उनको बाँकीमा</string>
     <string name="loan_working_after">बाँकी रह्यो</string>
     <string name="loan_working_after_lent">फिर्ता आउन बाँकी</string>
+    <string name="loan_working_replaced">%1$s को भुक्तानीले बदलेको तालिकाअनुसार तिरिएको। यो कति साँवा र कति ब्याज थियो भन्ने अब फाइलमा छैन।</string>
     <string name="loan_working_show">कसरी हिसाब भयो हेर्नुहोस्</string>
     <string name="loan_working_hide">भुक्तानीमा फर्कनुहोस्</string>
     <string name="loan_ledger_empty_title">अझै केही छैन</string>
