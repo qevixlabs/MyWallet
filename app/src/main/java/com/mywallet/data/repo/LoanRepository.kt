@@ -1785,6 +1785,27 @@ class LoanRepository @Inject constructor(
         return Reversal.Done
     }
 
+    /**
+     * Corrects what was handed over on the day the debt was taken.
+     *
+     * The one row whose figure is the *loan's* rather than the entry's: the
+     * disbursement is the debt arriving, so what it says and what the loan says
+     * it owes are two faces of one fact. Reversing it deliberately does nothing
+     * to the balance — see [moveWithMovement], where an opening only forgets the
+     * account it landed in, because a debt entered late has no disbursement row
+     * at all and must still stand. So when the row itself is corrected, this is
+     * what carries the difference across.
+     *
+     * Through [shiftBalance] like every other movement, so the schedule, the sum
+     * ever advanced and the day the debt clears all follow the way they do
+     * anywhere else.
+     */
+    suspend fun restateOpening(loanId: String, byMinor: Long) {
+        if (byMinor == 0L) return
+        val entity = loanDao.findById(loanId) ?: return
+        shiftBalance(entity = entity, byMinor = byMinor, advances = true)
+    }
+
     /** True when this debt's balance follows an amortisation schedule. */
     private fun amortises(entity: LoanEntity): Boolean =
         entity.seriesId != null && (entity.termMonths ?: 0) > 0

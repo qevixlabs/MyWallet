@@ -253,6 +253,14 @@ fun AddEntryScreen(
             // nothing the account page did not. Asked before the amount because
             // that is the order the user thinks in — what this is, then what it
             // cost.
+            //
+            // Withheld on the movements the app named itself — see
+            // [AddEntryUiState.showsNote]. A drawdown's row already reads "Taken
+            // from Dad", so an empty box demanding what it is for is asking
+            // after a question already answered. It comes back the moment there
+            // is something in it: a purchase on a card is called after what was
+            // bought, and that is the user's own word to correct.
+            if (state.showsNote) {
             OutlinedTextField(
                 colors = editableFieldColors(),
                 value = state.note,
@@ -268,6 +276,7 @@ fun AddEntryScreen(
                 },
                 modifier = Modifier.fillMaxWidth(),
             )
+            }
 
             OutlinedTextField(
                 colors = editableFieldColors(),

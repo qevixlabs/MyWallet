@@ -165,10 +165,17 @@ class AccountStatementViewModel @Inject constructor(
             canDelete = !it.fromLoanSchedule,
             opens = when {
                 // Interest the app credited to *this* account opens nothing: it
-                // would land on the page it was tapped on, and it is the app's
-                // own working rather than anything anyone typed.
+                // is the app's own working rather than anything anyone typed,
+                // and it is rewritten from the account's own terms every time a
+                // dated figure around it moves — so a form offering to correct
+                // it would be offering to type over the next recalculation.
                 it.entry.id.startsWith("$id$INTEREST_POSTING_SUFFIX") -> null
-                loan != null -> StatementTarget.Loan(loan)
+                // Everything else opens the movement itself, the payments
+                // against a debt included. A statement is a list of what passed
+                // through this account, and a row on it is one of them; the debt
+                // a payment settles is opened from the debt, and the account
+                // from the account. See `openEntry`, which every other list
+                // reaches the same verdict through.
                 else -> StatementTarget.Entry(it.entry.id)
             },
         )

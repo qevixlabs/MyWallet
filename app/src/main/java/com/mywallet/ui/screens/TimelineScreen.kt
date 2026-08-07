@@ -418,7 +418,7 @@ fun TimelineScreen(
                         ) {
                             EntryRow(
                                 entry = entry,
-                                onClick = { openEntry(entry, onOpenEntry, onOpenLoan) },
+                                onClick = { openEntry(entry, onOpenEntry) },
                                 showDate = false,
                             )
                             // A break inside the day, not the end of it — see
@@ -1022,12 +1022,18 @@ fun ProjectedEntryRow(
     showDate: Boolean = false,
     /** Head the row with which way the money runs — see [MovementMark]. */
     showMark: Boolean = false,
+    /**
+     * Give the holding's currency a line of its own rather than a bracket after
+     * its name — see the same parameter on [EntryRow], which this row has to
+     * agree with: the two are one payment on either side of the day it falls.
+     */
+    showCurrency: Boolean = false,
 ) {
     val money = LocalMoneyFormatter.current
     val dates = LocalDateDisplay.current
     val walletColors = WalletTheme.colors
     val route = projected.transferRoute()
-    val accountLabel = projected.accountLabel()
+    val accountLabel = projected.accountLabel(withCurrency = !showCurrency)
     val loanLabel = projected.loanLabel(accountLabel)
     // An instalment's note defaults to the loan's own name, which the
     // subtext underneath now carries. Leading with it said the bank's
@@ -1094,6 +1100,16 @@ fun ProjectedEntryRow(
                     text = subtitle,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            // The currency underneath, where the name above has been left
+            // whole — see [showCurrency].
+            if (showCurrency) {
+                Text(
+                    text = projected.accountCurrency ?: projected.currencyCode,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
                 )
             }
             if (showDate) {
@@ -1206,9 +1222,15 @@ private fun ProjectedEntry.transferRoute(): String? {
 
 /** The account this leaves, phrased exactly as the real row's is. */
 @Composable
-private fun ProjectedEntry.accountLabel(): String? =
+private fun ProjectedEntry.accountLabel(withCurrency: Boolean = true): String? =
     holdingDisplayName(
-        accountInstitution, accountName, accountKind, accountCurrency, accountSiblings,
+        accountInstitution,
+        accountName,
+        accountKind,
+        // Left out where the row prints it underneath instead — see
+        // [ProjectedEntryRow.showCurrency].
+        accountCurrency.takeIf { withCurrency },
+        accountSiblings,
     )
 
 /** The debt an instalment settles \u2014 see [loanRowLabel], which real rows share. */

@@ -260,7 +260,7 @@ fun HomeScreen(
                 state.recent.forEachIndexed { index, entry ->
                     EntryRow(
                         entry = entry,
-                        onClick = { openEntry(entry, onOpenEntry, onOpenLoan) },
+                        onClick = { openEntry(entry, onOpenEntry) },
                         modifier = Modifier
                             .background(rowStripe(index))
                             .padding(horizontal = LIST_PANEL_ROW_INSET),
@@ -465,28 +465,28 @@ private fun BreakdownRow(
 /**
  * What tapping a movement opens.
  *
- * **A row that belongs to a debt opens the debt** — all of them, not just the
- * instalments. The money-out form cannot say "this is a lump sum against that
- * loan", or a drawdown, or the interest for the broken first period; it has no
- * field for any of it. So opening one there offers nothing to correct and one
- * thing to break: a re-save writes back a plain payment, and the row that
- * rewrote `principal_minor` stops pointing at the debt it rewrote.
+ * **Every row opens its entry, the debt's own payments included.** A row on any
+ * of these lists is one movement, and what a reader taps it for is that
+ * movement: what it was for, how much, and which day. A holding is opened by
+ * tapping the holding — on the Accounts page, or from the account named on the
+ * row's own second line — and a list of payments that led there instead answered
+ * a question nobody had arrived with.
  *
- * Every one of them is made on the debt's own screen, and half of them the app
- * wrote for itself from dates the user gave it — the disbursement, the schedule,
- * the broken-period charge, each with an id derived from the loan's. The
- * projection an instalment grows out of has always opened the loan; the rest
- * were simply never asked the question, and stepping back a month found them.
+ * It used to send anything belonging to a debt to the debt's own screen, on the
+ * reasoning that the money form has no field for "this is a lump sum against
+ * that loan" and that a re-save would write back a plain payment. Both halves of
+ * that stopped being true: the form states what it cannot ask — a loan's
+ * instalment says its schedule lives with the loan, a drawdown says which
+ * overdraft it came from, a purchase says which card is carrying it — and a save
+ * keeps `loan_id` and `loan_part` and walks the debt from the old figure to the
+ * new one. See [WalletRepository.saveEntry].
  *
- * Everything else is a row the user typed and opens where they typed it.
+ * [onOpenLoan] is kept for the one thing that is not an entry: a *projection*,
+ * which is a rule speaking rather than a row, and whose only editable form is
+ * the arrangement behind it.
  */
-fun openEntry(
-    entry: MoneyEntry,
-    onOpenEntry: (String) -> Unit,
-    onOpenLoan: (String) -> Unit,
-) {
-    val loanId = entry.belongsToLoanId
-    if (loanId != null) onOpenLoan(loanId) else onOpenEntry(entry.id)
+fun openEntry(entry: MoneyEntry, onOpenEntry: (String) -> Unit) {
+    onOpenEntry(entry.id)
 }
 
 /**
@@ -499,6 +499,12 @@ fun EntryRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     showDate: Boolean = true,
+    /**
+     * Give the holding's currency a line of its own rather than a bracket after
+     * its name. Paired with [showMark]: it is the same page's arrangement, where
+     * a row leads with a mark and has the height for a third line.
+     */
+    showCurrency: Boolean = false,
     /**
      * Head the row with which way the money ran — see [MovementMark].
      *
@@ -549,7 +555,10 @@ fun EntryRow(
                 entry.accountInstitution,
                 entry.accountName,
                 entry.accountKind,
-                entry.accountCurrency,
+                // Withheld from the name where the row gives the currency a
+                // line of its own below — see [showCurrency]. Passing it here
+                // as well would print "(NPR)" twice on one row.
+                entry.accountCurrency.takeUnless { showCurrency },
                 entry.accountSiblings,
             )
             // A drawdown is a movement, and its row names both ends the way a
@@ -581,7 +590,9 @@ fun EntryRow(
                 // carrying it. Named like a holding, because to the person
                 // paying with it that is exactly what it is.
                 entry.isCardSpend -> listOfNotNull(
-                    entry.loanName?.let { "$it (${entry.currencyCode})" },
+                    entry.loanName?.let {
+                        if (showCurrency) it else "$it (${entry.currencyCode})"
+                    },
                 )
                 entry.isOverdraftDraw -> listOfNotNull(
                     drawRoute.takeIf { ownNote != null },
@@ -613,6 +624,23 @@ fun EntryRow(
                     text = details,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            // The currency the holding above is denominated in, on a line of
+            // its own.
+            //
+            // It used to sit in brackets after the name — "Nabil Bank Card
+            // (NPR)" — which is right on a page where the line has room, and
+            // wrong on one whose rows lead with a mark and whose second line is
+            // already the longest thing on them. Underneath, it is the same
+            // fact read in the same order, and the name is left whole.
+            if (showCurrency) {
+                val code = entry.accountCurrency ?: entry.currencyCode
+                Text(
+                    text = code,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
                 )
             }
             // The date on a line of its own, third.

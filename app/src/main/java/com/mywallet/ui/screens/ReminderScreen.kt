@@ -197,15 +197,17 @@ fun ReminderScreen(
                         // An instalment opens the debt, the same as the
                         // projected one below it does. The two are the same
                         // payment on either side of the morning it falls.
-                        onClick = { openEntry(row.entry, onOpenEntry, onOpenLoan) },
+                        onClick = { openEntry(row.entry, onOpenEntry) },
                         showDate = false,
                         showMark = true,
+                        showCurrency = true,
                     )
                     is Reminder.Due -> ProjectedEntryRow(
                         projected = row.projected,
                         onOpen = { onOpenProjection(row.projected.seriesId) },
                         showDate = false,
                         showMark = true,
+                        showCurrency = true,
                     )
                 }
                 if (index < state.reminders.rows.lastIndex) Hairline()

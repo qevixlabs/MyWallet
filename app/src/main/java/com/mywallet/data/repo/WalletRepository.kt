@@ -26,6 +26,7 @@ import com.mywallet.domain.AccountMovement
 import com.mywallet.domain.AccountWithBalance
 import com.mywallet.domain.DayGroup
 import com.mywallet.domain.HoldingBreakdown
+import com.mywallet.domain.LOAN_DISBURSEMENT_SUFFIX
 import com.mywallet.domain.MoneyEntry
 import com.mywallet.domain.PeriodSummary
 import com.mywallet.domain.Shortlist
@@ -93,6 +94,17 @@ sealed interface SaveResult {
      * deciding what the user bought.
      */
     data object OverLimit : SaveResult
+
+    /**
+     * A payment against a debt could not be changed because a later one off the
+     * same debt was worked out from the balance this one left.
+     *
+     * The same refusal a delete gets, for the same reason and said in the same
+     * words — see [Reversal.LaterPaymentFirst]. Correcting a lump sum moves the
+     * balance every payment after it was measured against, so the app declines
+     * rather than silently re-basing a debt the user cannot see the working of.
+     */
+    data object LaterPaymentFirst : SaveResult
 }
 
 /**
@@ -234,6 +246,33 @@ class WalletRepository @Inject constructor(
             )
         }
 
+        // **A payment against a debt takes the debt with it.**
+        //
+        // Every list in the app opens a row in this form now, the rows that move
+        // a loan included, and the entity below keeps `loan_id` and `loan_part`
+        // by copying them — so the corrected row still points at the debt it
+        // moved. What does not follow by itself is the *balance*: a drawdown, a
+        // lump sum or a purchase on a card wrote its figure into the loan when
+        // it was recorded, and an edit that changed the figure would leave the
+        // debt standing at the old one.
+        //
+        // Taken off and put back on through the same pair the delete and its
+        // undo use, rather than by arithmetic written a second time here: one of
+        // them is already the exact inverse of the other, and a third hand-built
+        // version of this would be a third chance to get a debt wrong.
+        //
+        // Only when something the balance depends on actually moved. Correcting
+        // a note must not walk a debt through a reversal — and on a lump sum
+        // with later payments on file, that reversal is refused outright.
+        val movesDebt = existing?.loanId != null && (
+            existing.amountMinor != amount.minor ||
+                existing.occurredOn != occurredOn.toEpochDay() ||
+                existing.direction != direction
+            )
+        if (movesDebt && loans.revertMovement(existing!!) == Reversal.LaterPaymentFirst) {
+            return SaveResult.LaterPaymentFirst
+        }
+
         val now = clock.nowMillis()
         val entity = existing?.copy(
             amountMinor = amount.minor,
@@ -266,6 +305,24 @@ class WalletRepository @Inject constructor(
             updatedAt = now,
         )
         entryDao.upsert(entity)
+        // And the debt takes the corrected figure, the way it took the original
+        // one. See the note above the reversal.
+        if (movesDebt) {
+            loans.reapplyMovement(entity)
+            // The debt arriving is the one row whose figure the reversal above
+            // deliberately leaves alone — an opening only records where the
+            // money landed. Correcting it has to carry the difference onto the
+            // balance itself, or the row would say one sum was borrowed while
+            // the loan went on owing another. Only in the debt's own currency:
+            // moving a figure across a rate the app was never told is how a
+            // balance becomes fiction. See [LoanRepository.restateOpening].
+            val loanId = existing!!.loanId!!
+            if (existing.id == "$loanId$LOAN_DISBURSEMENT_SUFFIX" &&
+                existing.currencyCode.equals(currencyCode, ignoreCase = true)
+            ) {
+                loans.restateOpening(loanId, amount.minor - existing.amountMinor)
+            }
+        }
         // Money the user has dated into a period the bank has already paid on
         // changes what that period earned. The earlier of the two days, because
         // an entry dragged forward out of a closed period changes it just as much

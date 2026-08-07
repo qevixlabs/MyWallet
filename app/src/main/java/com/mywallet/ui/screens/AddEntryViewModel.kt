@@ -157,8 +157,14 @@ data class AddEntryUiState(
     val isSaved: Boolean = false,
     val isDeleted: Boolean = false,
     /**
-     * True when the delete was refused because a later lump sum off the same
-     * debt is on file. See [Reversal.LaterPaymentFirst].
+     * True when a delete — or a correction that would move the same balance —
+     * was refused because a later lump sum off the same debt is on file. See
+     * [Reversal.LaterPaymentFirst].
+     *
+     * One flag for both, because it is one refusal said in one set of words:
+     * what the app cannot do is move a figure that a later payment was measured
+     * against, and whether the user was removing it or correcting it does not
+     * change what has to happen first.
      */
     val deleteBlocked: Boolean = false,
 ) {
@@ -227,6 +233,20 @@ data class AddEntryUiState(
      */
     val showsAccountRow: Boolean
         get() = !isExistingCardSpend && (accountChips.isNotEmpty() || offersCards)
+
+    /**
+     * Whether to ask what this movement was for at all.
+     *
+     * Everywhere but on the movements the app named itself: money taken from a
+     * debt and money spent on a facility are called after the arrangement they
+     * belong to — a drawdown's row reads "Taken from Dad" with nothing typed —
+     * so an empty box asking what it is for is a question already answered on
+     * the row. It comes back the moment there is an answer in it, since a
+     * purchase is named after what was bought and that word is the user's to
+     * correct.
+     */
+    val showsNote: Boolean
+        get() = note.isNotBlank() || !(isExistingDrawdown || isExistingCardSpend)
 
     /**
      * True for a purchase on a card or overdraft already on file, reopened.
@@ -796,7 +816,14 @@ class AddEntryViewModel @Inject constructor(
         // Asked of every movement, transfers included: the note is what the row
         // will be called, and a list of rows with nothing to call them is the
         // state this replaced.
-        if (current.note.isBlank()) {
+        //
+        // **Except of a movement the app named itself.** Money taken from a debt
+        // and money spent on a card are already called after the arrangement
+        // they belong to — the row reads "Taken from Dad" with nothing typed —
+        // and those rows are opened here now, from the debt's own statement.
+        // Demanding a note before the amount could be corrected would be the
+        // form insisting on a field it did not ask for when the row was written.
+        if (current.note.isBlank() && current.showsNote) {
             _state.value = current.copy(error = EntryError.NOTE)
             return@launch
         }
@@ -841,6 +868,12 @@ class AddEntryViewModel @Inject constructor(
         }
         if (result is SaveResult.OverLimit) {
             _state.value = current.copy(error = EntryError.OVER_LIMIT)
+            return@launch
+        }
+        // The debt would not let this figure move — see [SaveResult]. Said in
+        // the same words the swipe is refused in, and nothing is written.
+        if (result is SaveResult.LaterPaymentFirst) {
+            _state.value = current.copy(deleteBlocked = true)
             return@launch
         }
         if (card != null) {
