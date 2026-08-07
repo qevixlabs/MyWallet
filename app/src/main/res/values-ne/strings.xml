@@ -464,8 +464,7 @@
     <string name="loan_movement_interest_lent">प्राप्त ब्याज</string>
     <string name="loan_movement_spent">खर्च</string>
     <string name="loan_movement_drawn">झिकेको</string>
-    <string name="loan_movement_borrowed">सापटी लिएको</string>
-    <string name="loan_movement_lent">सापटी दिएको</string>
+    <string name="loan_movement_opening">ऋण</string>
     <string name="loan_movement_borrowed_more">थप लिएको</string>
     <string name="loan_movement_lent_more">थप दिएको</string>
     <string name="loan_movement_note">टिप्पणी (वैकल्पिक)</string>

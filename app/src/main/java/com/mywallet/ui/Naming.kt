@@ -235,10 +235,9 @@ fun loanMovementLabel(entry: MoneyEntry): String? {
     val action = when {
         entry.isOverdraftDraw -> null
         // Before the increase below, which it also is: the debt arriving is the
-        // one addition that is not the debt growing.
-        entry.isLoanOpening -> stringResource(
-            if (isIn) R.string.loan_movement_borrowed else R.string.loan_movement_lent
-        )
+        // one addition that is not the debt growing. And the one movement named
+        // the same both ways round — see `loan_movement_opening`.
+        entry.isLoanOpening -> stringResource(R.string.loan_movement_opening)
         entry.isLoanIncrease -> stringResource(
             if (isIn) R.string.loan_movement_borrowed_more else R.string.loan_movement_lent_more
         )

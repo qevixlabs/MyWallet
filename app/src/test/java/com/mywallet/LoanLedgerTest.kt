@@ -259,6 +259,64 @@ class LoanLedgerTest {
         assertEquals(MovementReversal.NONE, kindOf(fact).reversal())
     }
 
+    /**
+     * A debt whose disbursement row carries no derived id — restored from a file
+     * another tool wrote, or imported. The statement has to reach the same
+     * verdict about it anyway: it is the Loan, not more borrowed.
+     */
+    @Test
+    fun `the earliest increase on the loan's own start day is the debt arriving`() {
+        val loan = loan(principal = Money(10_000_00), outstanding = Money(8_000_00))
+        val rows = LoanLedger.of(
+            loan = loan,
+            countingFrom = day1,
+            facts = listOf(
+                lentMore(day1, Money(10_000_00)),
+                repaid(day2, Money(2_000_00)),
+                lentMore(day3, Money(500_00)),
+            ),
+        )
+
+        // Newest first: the top-up, the repayment, then the debt itself.
+        assertEquals(LoanMovementKind.INCREASE, rows[0].kind)
+        assertEquals(LoanMovementKind.PRINCIPAL, rows[1].kind)
+        assertEquals(LoanMovementKind.OPENING, rows[2].kind)
+    }
+
+    /**
+     * And it stops there. A top-up on a debt whose disbursement was never
+     * recorded has nothing left distinguishing it from the borrowing, and the
+     * app must not invent the difference — the guard is that a debt cannot have
+     * been paid before it existed.
+     */
+    @Test
+    fun `an increase with a movement in front of it is not the debt arriving`() {
+        val loan = loan(principal = Money(9_000_00), outstanding = Money(9_000_00))
+        val rows = LoanLedger.of(
+            loan = loan,
+            countingFrom = day1,
+            facts = listOf(
+                repaid(day1, Money(3_000_00)),
+                lentMore(day2, Money(2_000_00)),
+            ),
+        )
+
+        assertEquals(LoanMovementKind.INCREASE, rows[0].kind)
+    }
+
+    /** Nor is one borrowed after the day the loan's own figures count from. */
+    @Test
+    fun `an increase after the loan started is not the debt arriving`() {
+        val loan = loan(principal = Money(10_000_00), outstanding = Money(10_000_00))
+        val rows = LoanLedger.of(
+            loan = loan,
+            countingFrom = day1,
+            facts = listOf(lentMore(day2, Money(10_000_00))),
+        )
+
+        assertEquals(LoanMovementKind.INCREASE, rows[0].kind)
+    }
+
     private fun kindOf(fact: LoanEntryFact): LoanMovementKind = LoanLedger.kindOf(
         isOpening = fact.isOpening,
         part = fact.part,

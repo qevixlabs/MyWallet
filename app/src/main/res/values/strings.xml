@@ -666,8 +666,11 @@
          named after what they bought. -->
     <string name="loan_movement_spent">Spent</string>
     <string name="loan_movement_drawn">Drawn</string>
-    <string name="loan_movement_borrowed">Borrowed</string>
-    <string name="loan_movement_lent">Lent</string>
+    <!-- The debt itself arriving: the money that made it, on the one row of a
+         statement that is the loan rather than something that happened to it.
+         One word both ways round, unlike every other movement here — "Borrowed"
+         against "Lent" is the act, and what this row names is the thing. -->
+    <string name="loan_movement_opening">Loan</string>
     <string name="loan_movement_borrowed_more">Borrowed more</string>
     <string name="loan_movement_lent_more">Lent more</string>
     <!-- What one payment against a debt was about, in the user's own words.

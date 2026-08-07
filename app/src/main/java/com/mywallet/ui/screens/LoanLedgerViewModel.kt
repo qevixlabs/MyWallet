@@ -69,6 +69,30 @@ data class LedgerRow(
     /** Only when it says something the loan's own name does not. */
     val note: String? = null,
     val increases: Boolean = false,
+) {
+    /**
+     * The debt itself arriving: the money that made the loan, which is what the
+     * whole account is about rather than something that happened to it.
+     *
+     * **Nothing may be done to this row.** It does not delete, it does not open,
+     * and on a debt whose rows turn over it does not turn. Every other line on
+     * the page is an event the loan collected and can be taken back off it; this
+     * one *is* the loan, and the three things a row otherwise offers all come out
+     * wrong on it. Deleting it would leave a debt with a balance, a schedule and
+     * a year of instalments behind it and no money ever having been borrowed —
+     * a hole rather than a correction. Editing it would let the figure the whole
+     * arrangement is derived from be retyped on a page that cannot rebuild the
+     * arrangement from it; the loan's own editor is where that number lives, and
+     * it is the first box on it. And turning it over would show a sum with
+     * nothing in it: no interest was charged and no principal came off, because
+     * before this row there was no debt to charge interest on.
+     *
+     * The way to undo a loan that should never have been written down is to
+     * delete the loan, which the accounts list offers and which says outright
+     * that it takes every payment with it.
+     */
+    val isOpening: Boolean get() = kind == LoanMovementKind.OPENING
+
     /**
      * Whether this row can be swiped away.
      *
@@ -80,16 +104,9 @@ data class LedgerRow(
      * opinion about the schedule. What the schedule does about it is [Arrears]:
      * the period charges its interest, clears no principal, and the next payment
      * collects both.
-     *
-     * **The debt arriving is the one row that stays.** Every other line here is
-     * something that happened *to* a loan and can be taken back off it; that one
-     * is the loan. Removing it would leave a debt with a balance, a schedule and
-     * a year of instalments, and no money ever having been borrowed — which is
-     * not a correction but a hole, and the way to undo a loan that should never
-     * have been written down is to delete the loan.
      */
-    val canDelete: Boolean = true,
-) {
+    val canDelete: Boolean get() = !isOpening
+
     /**
      * Whether there is a second face worth turning the row over for.
      *
@@ -290,9 +307,6 @@ class LoanLedgerViewModel @Inject constructor(
             // themselves says anything a second line is worth spending on.
             note = note?.takeIf { it != loan.name },
             increases = increases,
-            // Everything a debt has had done to it can be taken back off it.
-            // The debt itself arriving cannot — see [LedgerRow.canDelete].
-            canDelete = kind != LoanMovementKind.OPENING,
         )
     }
 

@@ -537,11 +537,13 @@ private fun LedgerRowView(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    if (!turns) {
+    // The debt arriving is drawn and nothing else — no turn, no editor, no
+    // swipe. See [LedgerRow.isOpening] for why all three are wrong on it.
+    if (!turns || row.isOpening) {
         Box(
             modifier = modifier
                 .fillMaxWidth()
-                .clickable(onClick = onClick),
+                .then(if (row.isOpening) Modifier else Modifier.clickable(onClick = onClick)),
         ) {
             LedgerRowFace(row = row, isLent = isLent, kind = kind)
         }
@@ -890,9 +892,12 @@ private fun LoanMovementKind.labelRes(isLent: Boolean, kind: LoanKind?): Int = w
         isLent -> R.string.loan_movement_lent_more
         else -> R.string.loan_movement_borrowed_more
     }
-    // The debt itself arriving. Named for what happened rather than for what it
-    // did to the balance: "Borrowed more" on the row that is the borrowing reads
-    // as a debt that has already grown past what was agreed.
-    LoanMovementKind.OPENING ->
-        if (isLent) R.string.loan_movement_lent else R.string.loan_movement_borrowed
+    // The debt itself arriving, and **the one movement here named the same both
+    // ways round**: what every other row on this page names is an act, which
+    // borrowing and lending are opposites of, and what this one names is the
+    // thing the whole account is about. "Borrowed more" on the row that is the
+    // borrowing read as a debt that had already grown past what was agreed;
+    // "Borrowed" fixed that and still described the day rather than the debt.
+    // It is the Loan. See `loan_movement_opening`.
+    LoanMovementKind.OPENING -> R.string.loan_movement_opening
 }

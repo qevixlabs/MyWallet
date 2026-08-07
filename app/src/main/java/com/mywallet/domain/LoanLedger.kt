@@ -258,7 +258,40 @@ object LoanLedger {
         facts: List<LoanEntryFact>,
     ): List<LoanMovement> {
         val ordered = facts.sortedWith(compareBy({ it.date }, { it.createdAt }))
-        val kinds = ordered.map { it.kind() }
+        val kinds = ordered.map { it.kind() }.toMutableList()
+        // **And where no row said it was the opening, a row that could only be
+        // the opening is promoted to it.** [LoanEntryFact.isOpening] is read off
+        // an id derived from the loan's, which is right and is the only thing
+        // that can tell the borrowing from a top-up made the same day — but only
+        // a row this app wrote carries that id. A debt restored from a file
+        // another tool made, or imported, or written before the app derived the
+        // id at all, arrives with a perfectly ordinary adjustment where its
+        // disbursement should be. Left as an increase it read "Borrowed more" on
+        // the row that *is* the borrowing, it counted the whole principal into
+        // "so much more borrowed since it started", and it offered to delete the
+        // one row the debt cannot lose.
+        //
+        // Two things have to hold, and together they leave no room for a guess.
+        // It must be the **earliest** movement on the debt: nothing can be paid
+        // off, serviced or added to a debt that does not exist yet, so anything
+        // with a movement in front of it is not the debt arriving. And it must
+        // fall **on or before the day the loan's own figures count from**, which
+        // a genuine disbursement always does — a lump sum moves that day forward
+        // and leaves the disbursement behind it — while money borrowed later
+        // never can. A top-up on a debt whose disbursement was never recorded is
+        // the one row this cannot reach, and it is right not to: with no earlier
+        // movement and no later start day there is nothing left to tell them
+        // apart, and the app would be inventing the difference.
+        //
+        // A facility is deliberately left out of it. An overdraft is never
+        // disbursed; its first drawdown is a drawdown like every one after it.
+        if (!loan.isOverdraft &&
+            kinds.none { it == LoanMovementKind.OPENING } &&
+            kinds.firstOrNull() == LoanMovementKind.INCREASE &&
+            ordered.first().date <= countingFrom
+        ) {
+            kinds[0] = LoanMovementKind.OPENING
+        }
         val balanceAfter = arrayOfNulls<Money>(ordered.size)
         val balanceBefore = arrayOfNulls<Money>(ordered.size)
         val principal = arrayOfNulls<Money>(ordered.size)
