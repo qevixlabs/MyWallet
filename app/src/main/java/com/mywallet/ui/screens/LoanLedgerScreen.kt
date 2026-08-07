@@ -43,6 +43,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -440,9 +441,10 @@ private fun SummaryLine(
  * told from the same day three years earlier — is the tail of the row's own
  * subtext, where the rest of what the payment has to say already is.
  *
- * A fixed width, so every row's words start at the same place whatever digits
- * the day is made of — the column is read down, and a ragged left edge on the
- * payments reads as disorder rather than as dates.
+ * As wide as it is and no wider — the timeline's own lesson: a gutter sized
+ * for two digits stranded the single-digit days a gap away from their own
+ * words, and the words shifting a few points between rows is the cheaper
+ * price.
  */
 @Composable
 private fun LedgerRowDate(date: java.time.LocalDate) {
@@ -452,12 +454,8 @@ private fun LedgerRowDate(date: java.time.LocalDate) {
         style = DayNumberStyle,
         color = MaterialTheme.colorScheme.onSurface,
         maxLines = 1,
-        modifier = Modifier.width(LEDGER_DATE_WIDTH),
     )
 }
-
-/** Two digits of [DayNumberStyle], with a little air after them. */
-private val LEDGER_DATE_WIDTH = 44.dp
 
 /**
  * One line of the statement: when, what, how much, and what was left.
@@ -493,7 +491,11 @@ private fun LedgerRowView(
         verticalAlignment = Alignment.Top,
     ) {
         LedgerRowDate(date = row.date)
-        Spacer(Modifier.width(12.dp))
+        // A share of the figure's own size, exactly as the timeline spaces its
+        // day from the words beside it — see [DayLabel]. A fixed 12dp on top
+        // of a fixed-width tile left the single-digit days a gulf from their
+        // own words.
+        Spacer(Modifier.width(with(LocalDensity.current) { DayNumberStyle.fontSize.toDp() / 3 }))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 // What the movement did, with what the user wrote about it on
@@ -519,15 +521,17 @@ private fun LedgerRowView(
                 style = MaterialTheme.typography.bodyLarge,
             )
             // The holding the money passed through, then which month — and,
-            // reading Nepali, the English date the way a patro prints it in
-            // the corner. The day's own figure is the big one beside the row;
-            // this line is what that figure alone cannot say, said last, after
-            // the words that tell this payment from the others.
+            // reading Nepali, the English date joined to it with a dash rather
+            // than standing as a third item: "पौष २०८२ - 1 Jan" is one date
+            // said twice, and dotting it off made it read as one more fact.
+            // The day's own figure is the big one beside the row; this line is
+            // what that figure alone cannot say, said last, after the words
+            // that tell this payment from the others.
             Text(
                 text = listOfNotNull(
                     row.accountName,
-                    dates.monthAndYear(row.date),
-                    dates.secondaryShort(row.date),
+                    dates.monthAndYear(row.date) +
+                        (dates.secondaryShort(row.date)?.let { " - $it" } ?: ""),
                 ).joinToString(" · "),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
