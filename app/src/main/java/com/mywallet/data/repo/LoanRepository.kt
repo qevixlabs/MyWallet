@@ -298,6 +298,63 @@ class LoanRepository @Inject constructor(
      * takes over.
      */
     private suspend fun asFirstWrittenDown(entity: LoanEntity, asOf: LocalDate): Money? {
+        val basis = firstBasis(entity) ?: return null
+        val gap = entity.paymentEveryMonths.coerceAtLeast(1)
+        val bs = entity.stepsInBs()
+        val principal = basis.principal
+        val emi = basis.emi
+        val accrual = basis.accrual
+        val term = basis.termMonths
+        // How many of that schedule's instalments had fallen by the day being
+        // asked about. Counted from the rule's own dates rather than from the
+        // rows, exactly as `arrears` counts them, and with nothing marked missed:
+        // which periods went unpaid before a re-basing is not something the app
+        // keeps, and guessing would be worse than treating the schedule as met.
+        val periods = Recurrence.occurrencesBetween(
+            start = accrual.firstPaymentOn,
+            interval = RecurrenceInterval.MONTHLY,
+            from = accrual.firstPaymentOn,
+            to = asOf,
+            everyMonths = gap,
+            inBikramSambat = bs,
+        ).size
+        return LoanMath.outstanding(
+            principal = principal,
+            annualRatePercent = entity.annualRate ?: 0.0,
+            termMonths = term,
+            periodsElapsed = periods,
+            emi = emi,
+            style = entity.instalmentStyle,
+            monthsPerPayment = gap,
+            accrual = accrual,
+        )
+    }
+
+    /**
+     * The basis this debt was written down with, rebuilt — or null where it
+     * cannot be.
+     *
+     * A lump sum overwrites five things at once and keeps no copy, so the
+     * schedule the instalments *before* it were paid against is not on file. Four
+     * of the five can be put back from figures the re-basing deliberately leaves
+     * alone, which is what this does; see [asFirstWrittenDown], which asks it for
+     * one balance, and [history], which asks it for the whole table so a
+     * statement can show what those instalments were made of.
+     *
+     * The fifth is the instalment itself, and it is the one thing that cannot be
+     * checked: a borrower who chose to *lower* it rather than finish sooner moved
+     * the figure this leans on, and nothing on file says what it used to be.
+     * Which is why every caller is careful to be one re-basing back, where the
+     * instalment is either untouched or the caller has a safer answer.
+     */
+    private data class FirstBasis(
+        val principal: Money,
+        val emi: Money,
+        val accrual: Accrual,
+        val termMonths: Int,
+    )
+
+    private suspend fun firstBasis(entity: LoanEntity): FirstBasis? {
         val principal = entity.advancedMinor?.takeIf { it > 0L }?.let { Money(it) } ?: return null
         val moved = entity.disbursedOn?.let { LocalDate.ofEpochDay(it) } ?: return null
         val emi = entity.emiMinor?.let { Money(it) }?.takeIf { it.isPositive } ?: return null
@@ -332,29 +389,7 @@ class LoanRepository @Inject constructor(
             monthsPerPayment = gap,
             accrual = accrual,
         ) ?: return null
-        // How many of that schedule's instalments had fallen by the day being
-        // asked about. Counted from the rule's own dates rather than from the
-        // rows, exactly as `arrears` counts them, and with nothing marked missed:
-        // which periods went unpaid before a re-basing is not something the app
-        // keeps, and guessing would be worse than treating the schedule as met.
-        val periods = Recurrence.occurrencesBetween(
-            start = accrual.firstPaymentOn,
-            interval = RecurrenceInterval.MONTHLY,
-            from = accrual.firstPaymentOn,
-            to = asOf,
-            everyMonths = gap,
-            inBikramSambat = bs,
-        ).size
-        return LoanMath.outstanding(
-            principal = principal,
-            annualRatePercent = entity.annualRate ?: 0.0,
-            termMonths = term,
-            periodsElapsed = periods,
-            emi = emi,
-            style = entity.instalmentStyle,
-            monthsPerPayment = gap,
-            accrual = accrual,
-        )
+        return FirstBasis(principal, emi, accrual, term)
     }
 
     /**
@@ -850,7 +885,54 @@ class LoanRepository @Inject constructor(
                 loan = loan,
                 countingFrom = LocalDate.ofEpochDay(entity.startedOn),
                 facts = facts,
+                before = scheduleBeforeRebasing(entity),
             ),
+        )
+    }
+
+    /**
+     * The table the instalments *before* a lump sum were paid against, so a
+     * statement can say what each of them was made of.
+     *
+     * They were left blank for a while, on the reasoning that a lump sum rewrites
+     * the loan in place and the schedule above it belongs to a debt that no
+     * longer exists. True of the *stored* figures, and not the end of it: the
+     * re-basing deliberately leaves alone everything needed to rebuild what was
+     * there — see [firstBasis] — which is how "what did I owe last March" is
+     * already answered on a re-based loan. What was refused was the same
+     * question asked one row at a time.
+     *
+     * **Only one re-basing back.** With a second lump sum on file the rows
+     * between the two belong to a middle basis nobody kept, and this rebuild
+     * would quote the *original* schedule against them — a wrong figure in the
+     * one column a reader checks against their lender, which is worse than a
+     * blank. So they are counted, and exactly one is the case this can answer.
+     *
+     * Counted **from the day the money arrived** rather than by excluding the
+     * opening's id. The id is derived from the loan's and only a row this app
+     * wrote carries it — a debt restored or imported has an ordinary adjustment
+     * where its disbursement should be, which slipped past the exclusion and was
+     * counted as a second re-basing, so the rebuild refused itself on exactly the
+     * debts it was written for. Nothing can have re-based a loan before the money
+     * turned up, so "after the disbursement" says the same thing about the id the
+     * app wrote and the one it did not.
+     */
+    private suspend fun scheduleBeforeRebasing(entity: LoanEntity): List<Instalment> {
+        if (!amortises(entity)) return emptyList()
+        val basis = firstBasis(entity) ?: return emptyList()
+        val moved = entity.disbursedOn ?: return emptyList()
+        val changes = loanDao.basisChangesAfter(
+            entity.id, moved, "${entity.id}$DISBURSEMENT_SUFFIX",
+        )
+        if (changes.size != 1) return emptyList()
+        return LoanMath.schedule(
+            principal = basis.principal,
+            annualRatePercent = entity.annualRate ?: 0.0,
+            termMonths = basis.termMonths,
+            emi = basis.emi,
+            style = entity.instalmentStyle,
+            monthsPerPayment = entity.paymentEveryMonths.coerceAtLeast(1),
+            accrual = basis.accrual,
         )
     }
 

@@ -256,6 +256,17 @@ object LoanLedger {
         loan: Loan,
         countingFrom: LocalDate,
         facts: List<LoanEntryFact>,
+        /**
+         * The table the instalments before [countingFrom] were paid against,
+         * where a lump sum re-based the loan and that table could be rebuilt —
+         * see `LoanRepository.scheduleBeforeRebasing`.
+         *
+         * Empty is the honest answer rather than a missing feature: a debt
+         * re-based twice has a middle basis nobody kept, and there is nothing to
+         * read those rows against. They are then listed with their amounts and
+         * no working, exactly as they were before this existed.
+         */
+        before: List<Instalment> = emptyList(),
     ): List<LoanMovement> {
         val ordered = facts.sortedWith(compareBy({ it.date }, { it.createdAt }))
         val kinds = ordered.map { it.kind() }.toMutableList()
@@ -319,6 +330,46 @@ object LoanLedger {
             // Where the schedule stands as the walk goes down the list. Only an
             // instalment moves it; everything else is read against it.
             var running = loan.principal
+            // **The rows a lump sum left behind, read against the schedule they
+            // were actually paid against.** [before] is that schedule rebuilt —
+            // the app keeps enough to put it back, and a payment the reader can
+            // see on the page deserves the same answer as any other. The two
+            // walks are the same arithmetic on two tables: this one runs out at
+            // the lump sum, where the loan was written down again and the walk
+            // below picks it up from the current basis.
+            //
+            // Nothing is filled where [before] is empty. A debt re-based twice
+            // has a middle basis nobody kept, and those rows keep the amounts
+            // they always had and no working — which the statement says out loud
+            // rather than leaving the tap to do nothing.
+            if (before.isNotEmpty()) {
+                var earlier = 0
+                var was = before.firstOrNull()?.let { first ->
+                    Money(first.balance.minor + first.principal.minor)
+                } ?: loan.principal
+                ordered.forEachIndexed { index, fact ->
+                    if (fact.date >= countingFrom) return@forEachIndexed
+                    if (kinds[index] == LoanMovementKind.OPENING) {
+                        balanceAfter[index] = was
+                        return@forEachIndexed
+                    }
+                    if (kinds[index] == LoanMovementKind.INTEREST) {
+                        // Servicing interest leaves the balance where it found
+                        // it, on the old basis exactly as on the new one.
+                        balanceBefore[index] = was
+                        balanceAfter[index] = was
+                        return@forEachIndexed
+                    }
+                    if (kinds[index] != LoanMovementKind.INSTALMENT) return@forEachIndexed
+                    val row = before.getOrNull(earlier) ?: return@forEachIndexed
+                    earlier++
+                    balanceBefore[index] = was
+                    was = row.balance
+                    balanceAfter[index] = row.balance
+                    principal[index] = row.principal
+                    interest[index] = row.interest
+                }
+            }
             ordered.forEachIndexed { index, fact ->
                 if (fact.date < countingFrom) return@forEachIndexed
                 if (kinds[index] != LoanMovementKind.INSTALMENT) {
