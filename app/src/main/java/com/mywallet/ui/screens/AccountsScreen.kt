@@ -305,8 +305,18 @@ fun AccountsScreen(
                             .background(MaterialTheme.colorScheme.surfaceContainer),
                     ) {
                         val underBank = group.title != null
+                        // **No rule between the rows of a section the app named.**
+                        // A policy, a goal or a wallet carries a bar of its own
+                        // under it — see [HoldingProgressBar] — and a hairline
+                        // under that is a second line across the card a few
+                        // points below the first. The rows are one kind of thing
+                        // listed together and are already separated by the air
+                        // around them; a bank's card keeps its rules, where the
+                        // rows are savings, a deposit and a loan and the reader
+                        // is looking for where one ends.
+                        val ruled = underBank
                         group.accounts.forEachIndexed { index, row ->
-                            if (index > 0) Hairline(inset = 16.dp)
+                            if (index > 0 && ruled) Hairline(inset = 16.dp)
                             AccountRow(
                                 row = row,
                                 baseFormatter = baseFormatter,
@@ -354,7 +364,7 @@ fun AccountsScreen(
                             )
                         }
                         group.loans.forEachIndexed { index, loan ->
-                            if (index > 0 || group.accounts.isNotEmpty()) {
+                            if (ruled && (index > 0 || group.accounts.isNotEmpty())) {
                                 Hairline(inset = 16.dp)
                             }
                             LoanRow(
@@ -580,7 +590,10 @@ private fun DebtGroup(
                 .background(MaterialTheme.colorScheme.surfaceContainer),
         ) {
             loans.forEachIndexed { index, loan ->
-                if (index > 0) Hairline(inset = 16.dp)
+                // Unruled, as every section the app names itself is: money with
+                // one person and money with the next are two of the same thing
+                // rather than two parts of one arrangement, and each already
+                // carries a bar under it. See the note in the bank groups above.
                 LoanRow(
                     loan = loan,
                     baseFormatter = baseFormatter,
@@ -744,24 +757,16 @@ private fun AccountRow(
             }
         }
     }
-        // How far along this arrangement is, drawn rather than said — a deposit
-        // running down its term. Two figures and a date are a sentence to be
-        // read; a bar is the one thing on this screen that can be understood
-        // without reading. Anything that is simply somewhere money sits has
-        // none, since there is nothing it is on its way to.
-        //
-        // **Only inside a bank's card** — see [HoldingProgressBar]. A policy and
-        // a goal each sit alone in a card of their own, where the bar was the
-        // last thing in it and read as the card's bottom border rather than as a
-        // measure of anything. The figures on those rows already say it in
-        // words: a goal carries "of रू 1,50,000" beside its balance, and a policy
-        // the day it pays out.
+        // How far along this arrangement is, drawn rather than said — a goal
+        // filling up, a policy being paid up, a deposit running down its term.
+        // Two figures and a date are a sentence to be read; a bar is the one
+        // thing on this screen that can be understood without reading, which is
+        // the whole point of setting a goal rather than simply having savings,
+        // and just as true of everything else with an end to reach. Anything
+        // that is simply somewhere money sits has none, since there is nothing
+        // it is on its way to.
         HoldingProgressBar(
-            progress = if (underBank) {
-                HoldingProgress.of(row.account, row.balance, today)
-            } else {
-                null
-            },
+            progress = HoldingProgress.of(row.account, row.balance, today),
             color = row.account.color,
         )
     }
@@ -784,12 +789,10 @@ private fun AccountRow(
  * falls back to the ink its figure is already printed in; passing null draws
  * nothing at all, which is what a holding with no honest measure gets.
  *
- * **And what a holding alone in its card gets.** Under a bank the bar has rows
- * above and below it and reads as belonging to one of them; in a card with a
- * single row it is the last thing in the card, spans its whole width, and reads
- * as a rule drawn along the bottom — a border round the block rather than a
- * measure of the arrangement. Both callers decide that, and both decide it the
- * same way: see the notes at each call.
+ * It is also what separates one row from the next in the sections the app names
+ * itself, which have no hairline between their rows: a bar under a row is a
+ * clearer end to it than a rule drawn across the card, and the two together were
+ * two lines a few points apart.
  */
 @Composable
 private fun HoldingProgressBar(progress: Float?, color: Color) {
@@ -1023,13 +1026,7 @@ private fun LoanRow(
     }
         // How much of it is behind them — or, on a card, how much of the ceiling
         // is gone. The two run opposite ways on purpose; see [HoldingProgress].
-        //
-        // Only under a bank, for the reason the accounts above are: money with a
-        // person is the only row in its card, and a bar drawn under the only row
-        // of a card is a line along the bottom of it. It is also the debt with
-        // least to measure — nothing is repaid until it all is, so the bar sat
-        // empty at exactly the width of the card.
-        HoldingProgressBar(progress = if (underBank) HoldingProgress.of(loan) else null, color = mark)
+        HoldingProgressBar(progress = HoldingProgress.of(loan), color = mark)
     }
     }
 }
