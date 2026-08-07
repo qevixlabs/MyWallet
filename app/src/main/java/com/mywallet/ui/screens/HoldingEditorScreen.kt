@@ -115,7 +115,9 @@ import com.mywallet.ui.components.FOOTER_GAP
 import com.mywallet.ui.components.Hairline
 import com.mywallet.ui.components.LIST_PANEL_ROW_INSET
 import com.mywallet.ui.components.LabelDot
+import com.mywallet.ui.components.MOVEMENT_MARK_GAP
 import com.mywallet.ui.components.MoneyText
+import com.mywallet.ui.components.MovementMark
 import com.mywallet.ui.components.Reveal
 import com.mywallet.ui.components.RouteText
 import com.mywallet.ui.components.SectionHeader
@@ -3472,6 +3474,14 @@ internal fun StatementRowView(
             // ledger uses, which is the same list one screen away.
             .padding(horizontal = LIST_PANEL_ROW_INSET, vertical = 12.dp),
     ) {
+        // The same mark every other list of movements leads with — see
+        // [MovementMark]. A statement's rows are those same movements read from
+        // the account's side, and a transfer keeps its two-way mark here even
+        // though the column on the right signs it as one direction: which way
+        // this account felt it is the amount's business, what kind of movement
+        // it was is the mark's.
+        MovementMark(isIn = row.isIn, isTransfer = row.entry.isTransfer)
+        Spacer(Modifier.width(MOVEMENT_MARK_GAP))
         Column(modifier = Modifier.weight(1f)) {
             RouteText(
                 text = entryTitle(row.entry),
