@@ -184,17 +184,28 @@ fun ReminderScreen(
                     // "already recorded" note — the user is being reminded of
                     // the payment, not audited on whether the app has written
                     // it down yet, and every row here is one of the two.
+                    // **Without the date, and with a mark in its place.** The
+                    // date line said the day the heading at the top of the page
+                    // is already answering for — this list is one day, so every
+                    // row on it carried the same three characters — and the
+                    // margin it left is where the timeline puts its own date.
+                    // What goes there instead is which way the money runs, which
+                    // is what a reader scanning what wants doing sorts by. See
+                    // [MovementMark].
                     is Reminder.Recorded -> EntryRow(
                         entry = row.entry,
                         // An instalment opens the debt, the same as the
                         // projected one below it does. The two are the same
                         // payment on either side of the morning it falls.
                         onClick = { openEntry(row.entry, onOpenEntry, onOpenLoan) },
+                        showDate = false,
+                        showMark = true,
                     )
                     is Reminder.Due -> ProjectedEntryRow(
                         projected = row.projected,
                         onOpen = { onOpenProjection(row.projected.seriesId) },
-                        showDate = true,
+                        showDate = false,
+                        showMark = true,
                     )
                 }
                 if (index < state.reminders.rows.lastIndex) Hairline()

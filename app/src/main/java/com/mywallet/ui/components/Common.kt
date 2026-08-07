@@ -27,9 +27,12 @@ import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowRightAlt
+import androidx.compose.material.icons.automirrored.outlined.CallMade
+import androidx.compose.material.icons.automirrored.outlined.CallReceived
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.ContentCut
 import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChipDefaults
@@ -685,6 +688,59 @@ fun <T> ShortlistChips(
         }
     }
 }
+
+/**
+ * Which way the money ran, drawn at the head of a row.
+ *
+ * The same three marks the money form is picked with — out, in, and between two
+ * of your own accounts — so a row wears the mark of the button that could have
+ * written it. They are the marks Home heads its two totals with as well; one
+ * arrow means one thing everywhere in this app.
+ *
+ * **For a page whose rows have no day of their own.** The timeline gives that
+ * position to the date, because its rows are grouped under one — see [DayLabel].
+ * Reminders is a single day answered at the top of the page, so its rows have
+ * the same margin free and nothing about a date to put in it, and the direction
+ * is what a reader scanning what wants doing is actually sorting by.
+ *
+ * In the ink the amount on the other end of the row is already printed in, so
+ * the two ends of one row agree. No content description: the figure it points at
+ * is signed, and a screen reader announcing "call made" over "−रू 2,000" would
+ * be reading the picture rather than the fact.
+ */
+@Composable
+fun MovementMark(
+    isIn: Boolean,
+    modifier: Modifier = Modifier,
+    /** Neither earned nor spent — the money stays in the user's own world. */
+    isTransfer: Boolean = false,
+) {
+    val colors = WalletTheme.colors
+    Icon(
+        imageVector = when {
+            isTransfer -> Icons.Outlined.SwapHoriz
+            isIn -> Icons.AutoMirrored.Outlined.CallReceived
+            else -> Icons.AutoMirrored.Outlined.CallMade
+        },
+        contentDescription = null,
+        tint = when {
+            isTransfer -> MaterialTheme.colorScheme.onSurfaceVariant
+            isIn -> colors.moneyIn
+            else -> colors.moneyOut
+        },
+        modifier = modifier.size(MOVEMENT_MARK),
+    )
+}
+
+/**
+ * Big enough to read at a glance from the margin, and no bigger: it is a mark on
+ * a row rather than a control, and at an icon's usual 24 it started to compete
+ * with the title beside it.
+ */
+private val MOVEMENT_MARK = 20.dp
+
+/** The gap between a [MovementMark] and the words it heads. */
+val MOVEMENT_MARK_GAP = 12.dp
 
 /** The coloured dot that stands in for a label everywhere it is mentioned. */
 @Composable

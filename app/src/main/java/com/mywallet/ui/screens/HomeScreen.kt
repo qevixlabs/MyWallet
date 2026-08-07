@@ -48,7 +48,9 @@ import com.mywallet.ui.components.EmptyState
 import com.mywallet.ui.components.Hairline
 import com.mywallet.ui.components.LIST_PANEL_ROW_INSET
 import com.mywallet.ui.components.LabelDot
+import com.mywallet.ui.components.MOVEMENT_MARK_GAP
 import com.mywallet.ui.components.MoneyRoute
+import com.mywallet.ui.components.MovementMark
 import com.mywallet.ui.components.MoneyText
 import com.mywallet.ui.components.MonthSelector
 import com.mywallet.ui.components.MonthCurveSection
@@ -497,6 +499,15 @@ fun EntryRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     showDate: Boolean = true,
+    /**
+     * Head the row with which way the money ran — see [MovementMark].
+     *
+     * Off wherever the rows are grouped under a date, which is every list but
+     * one: there the margin is the day's, and two things in it would be a mark
+     * beside a heading rather than at the head of a row. On where the page is a
+     * single day and the rows have that margin free.
+     */
+    showMark: Boolean = false,
 ) {
     val money = LocalMoneyFormatter.current
     val dates = LocalDateDisplay.current
@@ -510,6 +521,10 @@ fun EntryRow(
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (showMark) {
+            MovementMark(isIn = isIn, isTransfer = entry.isTransfer)
+            Spacer(Modifier.width(MOVEMENT_MARK_GAP))
+        }
         Column(modifier = Modifier.weight(1f)) {
             // What the title said, so the line underneath does not say it again.
             // The title itself is [entryTitle], shared with every other list.

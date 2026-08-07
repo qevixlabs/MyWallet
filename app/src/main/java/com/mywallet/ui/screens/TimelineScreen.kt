@@ -67,7 +67,9 @@ import com.mywallet.ui.components.Hairline
 import com.mywallet.ui.components.LIST_PANEL_ROW_INSET
 import com.mywallet.ui.components.LabelDot
 import com.mywallet.ui.components.LaterPaymentFirstDialog
+import com.mywallet.ui.components.MOVEMENT_MARK_GAP
 import com.mywallet.ui.components.MoneyRoute
+import com.mywallet.ui.components.MovementMark
 import com.mywallet.ui.components.MoneyText
 import com.mywallet.ui.components.MonthSelector
 import com.mywallet.ui.components.Perforation
@@ -1018,6 +1020,8 @@ fun ProjectedEntryRow(
      * Home. Off on the timeline, where the day heading above has said it.
      */
     showDate: Boolean = false,
+    /** Head the row with which way the money runs — see [MovementMark]. */
+    showMark: Boolean = false,
 ) {
     val money = LocalMoneyFormatter.current
     val dates = LocalDateDisplay.current
@@ -1073,6 +1077,16 @@ fun ProjectedEntryRow(
             )
             .padding(vertical = 12.dp),
     ) {
+        if (showMark) {
+            // A transfer is known by its route rather than by a flag: a
+            // projection that names either end is one, and there is no other
+            // shape of row that does.
+            MovementMark(
+                isIn = projected.direction == Direction.IN,
+                isTransfer = route != null,
+            )
+            Spacer(Modifier.width(MOVEMENT_MARK_GAP))
+        }
         Column(modifier = Modifier.weight(1f)) {
             RouteText(text = title, style = MaterialTheme.typography.bodyLarge)
             if (subtitle.isNotEmpty()) {
