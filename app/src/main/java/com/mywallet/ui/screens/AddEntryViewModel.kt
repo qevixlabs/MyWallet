@@ -58,6 +58,26 @@ data class AddEntryUiState(
     val cards: List<Loan> = emptyList(),
     val selectedAccountId: String? = null,
     /**
+     * Whether **Not recorded** is one of the answers in the account row.
+     *
+     * It is the answer the debt's own cards already accept — plenty of money
+     * between people is cash, and naming an account it never touched is worse
+     * than naming none (`payFromOptional`). What this form did with such a row
+     * when it was reopened from a debt's statement was quietly stamp the
+     * shortlist's default on it, so a movement recorded against no account came
+     * back showing one and Save moved the money through a bank it had never
+     * been near. The question a form asks about a fact must have the answer the
+     * fact already carries among its options, or reopening it is an edit.
+     *
+     * Set for a movement against a debt, and for any row that already has no
+     * account whatever it is — the second is not a guess about what may be left
+     * blank but a refusal to change an answer this form was only asked to show.
+     * An ordinary expense still has to say where the money came from: there is
+     * no debt behind it to carry the figure, and a payment from nowhere would
+     * be a balance the app could not put anywhere.
+     */
+    val accountOptional: Boolean = false,
+    /**
      * The card this movement is paid from, when it is one. Exactly one of this
      * and [selectedAccountId] is ever set: money comes from one place.
      */
@@ -600,6 +620,17 @@ class AddEntryViewModel @Inject constructor(
         // had left there, and would have moved the purchase off the facility
         // still carrying it the moment Save was pressed.
         val spentFrom = entry.takeIf { it.isCardSpend }?.loanId
+        // Whether this row is allowed to name no account at all — see
+        // [AddEntryUiState.accountOptional]. A movement against a debt is,
+        // because the card that recorded it offered exactly that answer; and so
+        // is anything already saved without one, whatever it turns out to be.
+        //
+        // Off `loanId` rather than `belongsToLoan`, which is the wider test and
+        // the wrong one to reach for here: it is read off the debt's *name*,
+        // which the row this form loads does not carry. An instalment stores no
+        // loan either way and is caught by the second half whenever it needs to
+        // be — one made in cash has no account to have lost.
+        val accountOptional = entry.loanId != null || entry.accountId == null
         _state.value = _state.value.copy(
             isEditing = true,
             existingDrawdownName = drawnFromName,
@@ -609,13 +640,19 @@ class AddEntryViewModel @Inject constructor(
             // Editing shows the raw number, not a formatted one — the user is
             // about to change it, and grouping separators get in the way.
             amountText = formatter.toPlainInput(entry.amount),
+            // **Not recorded** is an answer here — see [accountOptional].
+            accountOptional = accountOptional,
             // Nothing on a card spend, which is the whole of how one is known.
             // Left standing at the shortlist's default it would be a second
             // source alongside the card, and [save] would have to guess.
-            selectedAccountId = if (spentFrom != null) {
-                null
-            } else {
-                entry.accountId ?: _state.value.selectedAccountId
+            selectedAccountId = when {
+                spentFrom != null -> null
+                // Where none is a real answer it is taken exactly as written,
+                // with no falling back to whatever the shortlist had already
+                // put there: the fallback is what turned "no account" into the
+                // first bank on the row the moment the form was opened.
+                accountOptional -> entry.accountId
+                else -> entry.accountId ?: _state.value.selectedAccountId
             },
             currencyCode = entry.currencyCode,
             date = entry.occurredOn,
@@ -727,6 +764,27 @@ class AddEntryViewModel @Inject constructor(
     }
 
     /**
+     * Puts the answer back to none — see [AddEntryUiState.accountOptional].
+     *
+     * Offered only where none is a real answer, and it has to be *chosen* rather
+     * than reached by tapping the selected chip again: a form whose answers turn
+     * themselves off when touched twice makes a stray tap indistinguishable from
+     * a decision, on a row that decides which balance the money moves.
+     *
+     * The currency is left exactly as it was. It came from the account the money
+     * ran through, and money that ran through no account is still in whatever
+     * currency it was in — a debt in dollars is settled in dollars whether or
+     * not a bank was involved.
+     */
+    fun clearAccount() {
+        _state.value = _state.value.copy(
+            selectedAccountId = null,
+            selectedCardId = null,
+            error = EntryError.NONE,
+        )
+    }
+
+    /**
      * The three things that follow whichever end was just answered: what the
      * amount is denominated in, whether the destination is still a different
      * account, and what the movement now converts to.
@@ -774,6 +832,13 @@ class AddEntryViewModel @Inject constructor(
     private fun autoSelectAccount() {
         val current = _state.value
         if (current.selectedAccountId != null) return
+        // **Never over a row already on file.** A default is what a form offers
+        // when nobody has answered yet; an entry being corrected has an answer,
+        // and "none" is one of them. The account list arrives from a flow, so
+        // this runs again every time it does — which is how a movement saved
+        // against no account came back with a bank on it however carefully
+        // [loadExisting] had cleared it.
+        if (current.isEditing) return
         val remembered = lastUsedAccountId
         val pick = current.accountChips.firstOrNull { it.id == remembered }
             ?: current.accountChips.firstOrNull()

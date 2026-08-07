@@ -346,7 +346,28 @@ fun AddEntryScreen(
                         },
                     )
                     Spacer(Modifier.height(10.dp))
-                    ShortlistChips(items = state.accountChips, shortlist = Shortlist.HOLDINGS) {
+                    ShortlistChips(
+                        items = state.accountChips,
+                        shortlist = Shortlist.HOLDINGS,
+                        // The answer the debt's own card offered when this
+                        // movement was recorded, offered again where it is being
+                        // corrected — see [AddEntryUiState.accountOptional]. In
+                        // the same words the card used, because it is the same
+                        // answer to the same question.
+                        leading = if (state.accountOptional) {
+                            {
+                                FilterChip(
+                                    colors = pickableChipColors(),
+                                    selected = state.selectedAccountId == null &&
+                                        state.selectedCardId == null,
+                                    onClick = viewModel::clearAccount,
+                                    label = { Text(stringResource(R.string.loan_account_none)) },
+                                )
+                            }
+                        } else {
+                            null
+                        },
+                    ) {
                         AccountChip(
                             account = it,
                             siblings = siblings[bankKey(it)] ?: 1,

@@ -664,6 +664,18 @@ fun <T> ShortlistChips(
     items: List<T>,
     shortlist: Int,
     modifier: Modifier = Modifier,
+    /**
+     * An answer that is not one of [items] and always shows — "Not recorded" on
+     * a movement that names no account.
+     *
+     * It leads the row and is never folded behind the word, because it is not a
+     * holding competing for a place among the others: it is the answer for when
+     * none of them applies, and hiding it behind "Show more" would put the way
+     * out of the question at the end of the list of things being asked about.
+     * It is not counted towards the shortlist either — the row shows the same
+     * number of holdings whether or not it is there.
+     */
+    leading: (@Composable () -> Unit)? = null,
     chip: @Composable (T) -> Unit,
 ) {
     var showAll by rememberSaveable { mutableStateOf(false) }
@@ -673,6 +685,7 @@ fun <T> ShortlistChips(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
+        leading?.invoke()
         shown.forEach { item -> chip(item) }
         if (!showAll && items.size > shortlist) {
             Text(
