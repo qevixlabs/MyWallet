@@ -381,6 +381,19 @@ fun AddEntryScreen(
                 )
             }
 
+            // And a purchase already made on a card says which card, for the
+            // same reason: the facility is carrying this figure in what it says
+            // has been drawn, so where it was spent is a fact about the row
+            // rather than a question this form can reopen. What it was for, how
+            // much and when are all still the user's to correct.
+            state.existingCardName?.let { name ->
+                Text(
+                    text = stringResource(R.string.entry_card_spend_note, name),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
             if (state.isTransfer) {
                 Reveal {
                 Column {

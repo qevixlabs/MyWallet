@@ -138,6 +138,18 @@ data class AddEntryUiState(
      * the money came from, said rather than asked.
      */
     val existingDrawdownName: String? = null,
+    /**
+     * The card or overdraft an existing purchase was spent from, when editing
+     * one.
+     *
+     * Said rather than asked, exactly as a drawdown's is. The facility is
+     * carrying this figure in its drawn balance, so it is not a question this
+     * form can reopen: answering it with a bank account would leave the card
+     * owing money for a purchase that no longer says it was made on the card.
+     * The amount, the day and what it was for are all still the user's to
+     * correct — see [LoanRepository.spendOnCard].
+     */
+    val existingCardName: String? = null,
     val interval: RecurrenceInterval = RecurrenceInterval.MONTHLY,
     /** Null means it repeats indefinitely. */
     val repeatUntil: LocalDate? = null,
@@ -214,7 +226,15 @@ data class AddEntryUiState(
      * decide. One chip, already selected, is that sentence, and it costs a line.
      */
     val showsAccountRow: Boolean
-        get() = accountChips.isNotEmpty() || offersCards
+        get() = !isExistingCardSpend && (accountChips.isNotEmpty() || offersCards)
+
+    /**
+     * True for a purchase on a card or overdraft already on file, reopened.
+     *
+     * Where it was spent from is then a fact on the row rather than a row of
+     * chips — see [existingCardName].
+     */
+    val isExistingCardSpend: Boolean get() = existingCardName != null
 
     /**
      * True for a drawdown already on file, being reopened.
@@ -476,14 +496,29 @@ class AddEntryViewModel @Inject constructor(
         } else {
             null
         }
+        // And a purchase made on a card opens on that card. It names no account
+        // — that is what makes it a card spend — so without this the form fell
+        // back to whichever bank account happened to be first, said the money
+        // had left there, and would have moved the purchase off the facility
+        // still carrying it the moment Save was pressed.
+        val spentFrom = entry.takeIf { it.isCardSpend }?.loanId
         _state.value = _state.value.copy(
             isEditing = true,
             existingDrawdownName = drawnFromName,
+            existingCardName = spentFrom?.let { loans.findLoan(it)?.name },
+            selectedCardId = spentFrom,
             direction = entry.direction,
             // Editing shows the raw number, not a formatted one — the user is
             // about to change it, and grouping separators get in the way.
             amountText = formatter.toPlainInput(entry.amount),
-            selectedAccountId = entry.accountId ?: _state.value.selectedAccountId,
+            // Nothing on a card spend, which is the whole of how one is known.
+            // Left standing at the shortlist's default it would be a second
+            // source alongside the card, and [save] would have to guess.
+            selectedAccountId = if (spentFrom != null) {
+                null
+            } else {
+                entry.accountId ?: _state.value.selectedAccountId
+            },
             currencyCode = entry.currencyCode,
             date = entry.occurredOn,
             note = entry.note.orEmpty(),
@@ -788,6 +823,10 @@ class AddEntryViewModel @Inject constructor(
                 amount = amount,
                 date = current.date,
                 note = current.note,
+                // Correcting the purchase this form was opened on, rather than
+                // recording a second one. Null while writing a new one, which is
+                // every purchase typed from this screen.
+                id = entryId,
             )
         } else {
             repository.saveEntry(

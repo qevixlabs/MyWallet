@@ -784,10 +784,10 @@ fun WalletApp(
                         ) {
                             LoanLedgerScreen(
                                 onBack = { navController.popBackStack() },
-                                // The holding the payment passed through, pushed on
-                                // top: back returns to the statement it was read in.
-                                onOpenAccount = {
-                                    navController.navigate(Routes.holding(accountId = it))
+                                // The payment itself, pushed on top: back returns
+                                // to the statement it was read in.
+                                onOpenEntry = {
+                                    navController.navigate(Routes.addEntry(it))
                                 },
                             )
                         }

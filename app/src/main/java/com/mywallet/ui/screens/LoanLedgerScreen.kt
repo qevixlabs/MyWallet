@@ -77,12 +77,23 @@ import androidx.compose.material3.SnackbarResult
  * memory of it — which is the only thing money between people is ever settled
  * by.
  *
- * A row is not opened for editing: a payment's amount is corrected where it was
- * recorded, and a row here that reopened an entry would offer to change a figure
- * whose effect on the balance lives in the loan rather than in the entry. It is
- * swiped away instead — every movement, the instalments included. Removing one
- * puts the debt back where the payment found it: a lump sum's money goes back on
- * the balance, and an instalment leaves a period that charged its interest and
+ * **A row opens the payment it is a line about.** Every row here is an entry —
+ * the money really left an account on a day — so a tap goes to that entry, the
+ * way a tap on any other list of movements in the app does. It used to open the
+ * *account* instead, which answered a question nobody had arrived with: a reader
+ * on this page is checking one payment, and the row that describes it led
+ * anywhere except to it.
+ *
+ * It was withheld altogether before that, on the reasoning that a payment's
+ * amount is corrected where it was recorded and that changing a figure here
+ * would edit an entry whose effect on the balance lives in the loan. That is a
+ * reason for the *editor* to be careful — and it is; a loan's instalment opens
+ * with its schedule controls withheld — not a reason for the only list of a
+ * debt's payments to be the one list in the app that leads nowhere.
+ *
+ * A row is also swiped away — every movement, the instalments included. Removing
+ * one puts the debt back where the payment found it: a lump sum's money goes back
+ * on the balance, and an instalment leaves a period that charged its interest and
  * cleared nothing, which the next payment then collects. See [Arrears].
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -91,10 +102,10 @@ fun LoanLedgerScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     /**
-     * Opens the holding a payment passed through — the bank it left, or the cash
-     * tin. A row naming none does not offer it; see [LedgerRow.accountId].
+     * Opens the payment itself — the entry that recorded it, which is where its
+     * date, its amount and the account it left are written down.
      */
-    onOpenAccount: (String) -> Unit = {},
+    onOpenEntry: (String) -> Unit = {},
     viewModel: LoanLedgerViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -245,7 +256,7 @@ fun LoanLedgerScreen(
                                     row = row,
                                     isLent = state.isLent,
                                     kind = state.kind,
-                                    onOpenAccount = onOpenAccount,
+                                    onOpenEntry = onOpenEntry,
                                     modifier = banded,
                                 )
                             }
@@ -254,7 +265,7 @@ fun LoanLedgerScreen(
                                 row = row,
                                 isLent = state.isLent,
                                 kind = state.kind,
-                                onOpenAccount = onOpenAccount,
+                                onOpenEntry = onOpenEntry,
                                 modifier = paper.then(banded),
                             )
                         }
@@ -384,7 +395,7 @@ private fun LedgerRowView(
     /** Which debt this is: what a movement is *called* depends on it. */
     kind: LoanKind?,
     modifier: Modifier = Modifier,
-    onOpenAccount: (String) -> Unit = {},
+    onOpenEntry: (String) -> Unit = {},
 ) {
     val dates = LocalDateDisplay.current
     val colors = WalletTheme.colors
@@ -392,13 +403,11 @@ private fun LedgerRowView(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            // Opens the holding the money passed through — a payment is a fact
-            // about two things, the debt it moved and the account it left, and
-            // this list only ever showed the first. A row naming no account
-            // stays untappable rather than leading nowhere.
-            .let { base ->
-                row.accountId?.let { id -> base.clickable { onOpenAccount(id) } } ?: base
-            }
+            // Opens the payment itself. Every row on this page is an entry —
+            // [LedgerRow.id] *is* its id — so there is always somewhere to go,
+            // and the page it goes to is the one that answers what a reader
+            // checking a line on a statement has come to ask.
+            .clickable { onOpenEntry(row.id) }
             // Inset from the paper's edge rather than from the page's, the way
             // a card's rows are — see [listPanel].
             .padding(horizontal = LIST_PANEL_ROW_INSET, vertical = 12.dp),
@@ -420,8 +429,21 @@ private fun LedgerRowView(
                 // places on the ledger and in one on every other list; joined
                 // here it is the one sentence the app writes about a payment,
                 // written the same way wherever the payment is drawn.
+                //
+                // **Except on something bought with the facility, where the note
+                // is the whole of it.** What the user typed is the name of the
+                // thing — "Groceries" — and the words in front of it were the
+                // app naming the instrument: "Spent on card · Groceries" on an
+                // overdraft, which is not a card and never had one. The kind is
+                // already the page's own heading; what a row has to say is which
+                // purchase it was. Only where nothing was typed does the plain
+                // word stand in, since a row cannot be blank.
                 text = listOfNotNull(
-                    stringResource(row.kind.labelRes(isLent, kind)).withNote(row.note),
+                    if (row.kind == LoanMovementKind.SPEND) {
+                        row.note ?: stringResource(R.string.loan_movement_spent)
+                    } else {
+                        stringResource(row.kind.labelRes(isLent, kind)).withNote(row.note)
+                    },
                     row.accountName,
                 ).joinToString(" · "),
                 style = MaterialTheme.typography.bodySmall,

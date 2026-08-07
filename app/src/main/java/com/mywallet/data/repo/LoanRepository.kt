@@ -1721,6 +1721,12 @@ class LoanRepository @Inject constructor(
             part = entry.loanPart,
             fromSeries = entry.seriesId != null && entry.seriesId == entity.seriesId,
             isAdjustment = entry.isAdjustment,
+            // Left out once, and it mattered: a purchase on a card has no rule,
+            // no account and no part, so without this it was read as an
+            // instalment — the one kind whose reversal is to do nothing. Deleting
+            // रू 2,000 of groceries took the spending off the month and left the
+            // card owing the रू 2,000 for ever.
+            isSpend = entry.isCardSpend,
         )
 
         when (kind.reversal()) {
@@ -2006,18 +2012,34 @@ class LoanRepository @Inject constructor(
      * apart from everything else against the debt — see
      * `MoneyEntryEntity.isCardSpend`. Refused above the limit rather than
      * clamped: a purchase the card would have declined is not a purchase.
+     *
+     * **[id] corrects one already recorded** rather than writing a second. A
+     * purchase is now opened from the card's own statement, and a form that
+     * saved by inserting would have answered "I typed 2,000 and meant 1,200"
+     * with two purchases and a facility owing 3,200. What the balance moves by
+     * is the difference between the two figures, and the limit is checked
+     * against that difference for the same reason: correcting रू 2,000 down to
+     * रू 1,200 on a full card must not be refused for exceeding it.
      */
     suspend fun spendOnCard(
         loanId: String,
         amount: Money,
         date: LocalDate,
         note: String?,
+        /** The purchase being corrected, or null to record a new one. */
+        id: String? = null,
     ): SaveResult {
         if (amount.minor <= 0L) return SaveResult.AmountRequired
         val entity = loanDao.findById(loanId) ?: return SaveResult.AccountRequired
         if (entity.kind != LoanKind.OVERDRAFT) return SaveResult.AccountRequired
         val limit = entity.creditLimitMinor ?: return SaveResult.AmountRequired
-        if (entity.principalMinor + amount.minor > limit) return SaveResult.OverLimit
+        // What this purchase is already costing the facility, so only the change
+        // is weighed against the limit and only the change moves the balance.
+        // Zero for a new one, and zero for one being moved here from another
+        // card — that one is taken off its old facility below.
+        val existing = id?.let { entryDao.findById(it) }?.takeIf { it.isCardSpend }
+        val already = existing?.takeIf { it.loanId == loanId }?.amountMinor ?: 0L
+        if (entity.principalMinor - already + amount.minor > limit) return SaveResult.OverLimit
 
         val now = clock.nowMillis()
         val baseCode = settings.settings.first().currencyCode
@@ -2030,7 +2052,10 @@ class LoanRepository @Inject constructor(
         )
         entryDao.upsert(
             MoneyEntryEntity(
-                id = UUID.randomUUID().toString(),
+                // The purchase being corrected keeps its own id, and with it its
+                // place in every list that already shows it. A new id would
+                // leave the old row behind and the facility owing both.
+                id = existing?.id ?: UUID.randomUUID().toString(),
                 amountMinor = amount.minor,
                 currencyCode = entity.currencyCode.uppercase(),
                 baseAmountMinor = converted.amount.minor,
@@ -2046,13 +2071,26 @@ class LoanRepository @Inject constructor(
                 status = EntryStatus.CONFIRMED,
                 loanId = loanId,
                 note = entity.noteFor(note),
-                createdAt = now,
+                // The day it was written down is a fact about the row and does
+                // not change because a figure on it was corrected. It is also
+                // what orders two movements made on one date — see
+                // [LoanEntryFact.createdAt] — so rewriting it would move a
+                // corrected purchase to the end of its own day.
+                createdAt = existing?.createdAt ?: now,
                 updatedAt = now,
             )
         )
+        // Moved here from another card: that one stops carrying it. Done through
+        // [shiftBalance] rather than by writing the figure, so the facility it
+        // leaves is put back in step the same way every other reversal does it.
+        existing?.takeIf { it.loanId != null && it.loanId != loanId }?.let { moved ->
+            loanDao.findById(moved.loanId!!)?.let { from ->
+                shiftBalance(entity = from, byMinor = -moved.amountMinor, advances = true)
+            }
+        }
         loanDao.upsert(
             entity.copy(
-                principalMinor = entity.principalMinor + amount.minor,
+                principalMinor = entity.principalMinor - already + amount.minor,
                 updatedAt = now,
             )
         )

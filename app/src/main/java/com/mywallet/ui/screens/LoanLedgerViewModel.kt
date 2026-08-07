@@ -44,11 +44,15 @@ data class LedgerRow(
     val splitPrincipal: String? = null,
     val splitInterest: String? = null,
     /**
-     * The holding the money passed through, so the row can open it — the bank it
-     * was paid from, or the cash tin it was handed out of. Null on a payment
-     * that names none, which leads nowhere.
+     * The holding the money passed through, named on the row — the bank it was
+     * paid from, or the cash tin it was handed out of. Null on a payment that
+     * names none: one the app generated for a day before it was told about the
+     * debt, or a lump sum handed over in cash with no account set up for it.
+     *
+     * Named only. A tap opens the *payment*, which is what a reader checking a
+     * line has come for and which names this account itself; the id the row used
+     * to carry so it could open the holding is gone with the behaviour.
      */
-    val accountId: String? = null,
     val accountName: String? = null,
     /** Only when it says something the loan's own name does not. */
     val note: String? = null,
@@ -223,7 +227,6 @@ class LoanLedgerViewModel @Inject constructor(
             balanceAfter = balanceAfter?.let { own.formatCompact(it) },
             splitPrincipal = principalPart?.let { own.formatCompact(it) },
             splitInterest = interestPart?.let { own.formatCompact(it) },
-            accountId = accountId,
             accountName = accountName,
             // An instalment's note defaults to the loan's own name, which the
             // heading above already carries. Only a note the user wrote

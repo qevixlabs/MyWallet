@@ -357,6 +357,7 @@
     <string name="entry_card_available">%1$s · %2$s बाँकी</string>
     <string name="entry_over_limit">यो कार्डमा बाँकी रहेको सीमाभन्दा बढी भयो।</string>
     <string name="entry_drawdown_note">%1$s बाट झिकिएको। ऋण लिएको पैसा आम्दानी होइन, त्यसैले लेबल लाग्दैन।</string>
+    <string name="entry_card_spend_note">%1$s बाट खर्च। के का लागि, कति र कहिले — यी सबै यहीँ सच्याउन सकिन्छ।</string>
     <string name="prepay_title_overdraft">भुक्तानी</string>
     <string name="prepay_amount">कति?</string>
     <string name="prepay_amount_overdraft">कति?</string>
@@ -451,7 +452,7 @@
     <string name="loan_movement_received">फिर्ता</string>
     <string name="loan_movement_interest">ब्याज मात्र</string>
     <string name="loan_movement_interest_lent">प्राप्त ब्याज</string>
-    <string name="loan_movement_spent">कार्डबाट खर्च</string>
+    <string name="loan_movement_spent">खर्च</string>
     <string name="loan_movement_drawn">झिकेको</string>
     <string name="loan_movement_borrowed">सापटी लिएको</string>
     <string name="loan_movement_lent">सापटी दिएको</string>

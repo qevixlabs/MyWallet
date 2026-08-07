@@ -62,8 +62,8 @@
     <!-- A swipe asks before it acts, wherever it is offered. The words say what
          goes and what comes of it, since the row itself is already off screen
          behind the dialog. -->
-    <string name="entry_delete_title">Remove this movement?</string>
-    <string name="entry_delete_body">It comes off every balance and total it was part of.</string>
+    <string name="entry_delete_title">Remove this entry?</string>
+    <string name="entry_delete_body">It is removed from every balance and total it was included in.</string>
     <string name="entry_delete_repeat_title">Remove this repeating payment?</string>
     <string name="entry_delete_repeat_body">Every occurrence goes — the ones already recorded and the ones still to come — and the repeat stops. Swipe a single date away instead to drop only that one.</string>
     <!-- One occurrence of a repeating rule that has not happened yet. The rule
@@ -529,6 +529,10 @@
     <string name="entry_card_available">%1$s · %2$s left</string>
     <string name="entry_over_limit">That is more than this card has left to draw.</string>
     <string name="entry_drawdown_note">Taken from %1$s. Borrowed money is not income, so no label applies.</string>
+    <!-- A purchase already recorded on a card or overdraft, reopened. Where it
+         was spent is stated rather than asked: the facility is carrying the
+         figure in what it says has been drawn. -->
+    <string name="entry_card_spend_note">Spent on %1$s. What it was for, how much and when can all be corrected here.</string>
     <string name="prepay_title_overdraft">Payment</string>
     <string name="prepay_amount">How much?</string>
     <string name="prepay_amount_overdraft">How much?</string>
@@ -636,9 +640,12 @@
     <string name="loan_movement_received">Repayment</string>
     <string name="loan_movement_interest">Interest only</string>
     <string name="loan_movement_interest_lent">Interest received</string>
-    <!-- Money spent straight from a card: the one movement that is spending
-         and the debt growing at the same time. -->
-    <string name="loan_movement_spent">Spent on card</string>
+    <!-- Money spent straight from a facility: the one movement that is spending
+         and the debt growing at the same time. Not "on card" — an overdraft is
+         spent from the same way and has no card to name. Stands in only where
+         the user typed nothing about the purchase; where they did, the row is
+         named after what they bought. -->
+    <string name="loan_movement_spent">Spent</string>
     <string name="loan_movement_drawn">Drawn</string>
     <string name="loan_movement_borrowed">Borrowed</string>
     <string name="loan_movement_lent">Lent</string>
