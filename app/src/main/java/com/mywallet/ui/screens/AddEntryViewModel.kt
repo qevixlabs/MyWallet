@@ -13,6 +13,7 @@ import com.mywallet.data.fx.ExchangeRateRepository
 import com.mywallet.data.repo.Clock
 import com.mywallet.data.repo.EntryDeletion
 import com.mywallet.data.repo.LoanRepository
+import com.mywallet.data.repo.PlanRepository
 import com.mywallet.data.repo.RecurrenceRepository
 import com.mywallet.data.repo.SaveResult
 import com.mywallet.data.repo.WalletRepository
@@ -150,6 +151,28 @@ data class AddEntryUiState(
      * correct — see [LoanRepository.spendOnCard].
      */
     val existingCardName: String? = null,
+    /**
+     * The arrangement whose schedule wrote this movement — a policy's premium, a
+     * deposit's instalment, a goal's contribution — when editing one.
+     *
+     * Its rhythm and its two ends were agreed on the arrangement's own card and
+     * are carried by a rule the arrangement owns, so this form states them
+     * instead of offering them: re-answering "into" would move a premium off the
+     * policy that is counting it, and unticking a repeat this form did not write
+     * would stop a schedule the policy still expects. What is left is a
+     * correction to one date's figure, which is what the user came for.
+     */
+    val planPaymentName: String? = null,
+    /**
+     * Editing one date of a repeating payment, not the rule behind it.
+     *
+     * The repeat controls are the rule's and are withheld — unticking them here
+     * would stop a schedule the user only meant to correct one date of — and a
+     * line says which act this is. The save already does the right thing: the
+     * row keeps its series and is marked confirmed, so the rule's next edit
+     * cannot rewrite a figure the user has stated by hand.
+     */
+    val isSingleOccurrence: Boolean = false,
     val interval: RecurrenceInterval = RecurrenceInterval.MONTHLY,
     /** Null means it repeats indefinitely. */
     val repeatUntil: LocalDate? = null,
@@ -232,7 +255,8 @@ data class AddEntryUiState(
      * decide. One chip, already selected, is that sentence, and it costs a line.
      */
     val showsAccountRow: Boolean
-        get() = !isExistingCardSpend && (accountChips.isNotEmpty() || offersCards)
+        get() = !isExistingCardSpend && !isPlanPayment &&
+            (accountChips.isNotEmpty() || offersCards)
 
     /**
      * Whether to ask what this movement was for at all.
@@ -247,6 +271,9 @@ data class AddEntryUiState(
      */
     val showsNote: Boolean
         get() = note.isNotBlank() || !(isExistingDrawdown || isExistingCardSpend)
+
+    /** True while editing one date of an arrangement's own schedule. */
+    val isPlanPayment: Boolean get() = planPaymentName != null
 
     /**
      * True for a purchase on a card or overdraft already on file, reopened.
@@ -272,7 +299,9 @@ data class AddEntryUiState(
      * It re-bases the debt as it is written, and a rule that did that once a
      * month would report a debt the user never took.
      */
-    val canRepeat: Boolean get() = !isExistingDrawdown && selectedCardId == null
+    val canRepeat: Boolean
+        get() = !isExistingDrawdown && !isPlanPayment && !isSingleOccurrence &&
+            selectedCardId == null
 
     /**
      * Whether the calendar question is worth asking at all.
@@ -314,6 +343,9 @@ class AddEntryViewModel @Inject constructor(
     private val exchangeRates: ExchangeRateRepository,
     private val recurrence: RecurrenceRepository,
     private val loans: LoanRepository,
+    // Asked one question only: whether the rule behind an occurrence belongs to
+    // an arrangement — a policy, a deposit, a goal — rather than to the user.
+    private val plans: PlanRepository,
     private val clock: Clock,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
@@ -330,6 +362,16 @@ class AddEntryViewModel @Inject constructor(
     private var entryId: String? =
         savedStateHandle.get<String>(Routes.ARG_ENTRY_ID)?.takeIf { it.isNotBlank() }
 
+    /**
+     * Edit the tapped occurrence itself rather than the rule it came from.
+     *
+     * Set by the account statement and nowhere else — see
+     * [Routes.ARG_OCCURRENCE]. Everywhere the page is about the plan, a
+     * repeating row still opens its rule.
+     */
+    private val editOccurrence: Boolean =
+        savedStateHandle.get<String>(Routes.ARG_OCCURRENCE) == "true"
+
     private val _state = MutableStateFlow(AddEntryUiState(date = clock.today()))
     val state: StateFlow<AddEntryUiState> = _state.asStateFlow()
 
@@ -337,6 +379,23 @@ class AddEntryViewModel @Inject constructor(
 
     /** Set when the entry being edited belongs to a repeating rule. */
     private var editingSeriesId: String? = null
+
+    /**
+     * The arrangement's own rule behind the occurrence being edited, held apart
+     * from [editingSeriesId] on purpose: that field is the handle the repeat
+     * controls rewrite, and this rule is not this form's to rewrite. What it is
+     * for is the save — the corrected legs have to keep pointing at the rule, or
+     * a premium corrected by a rupee would fall out of the schedule the policy
+     * counts. See [AddEntryUiState.planPaymentName].
+     */
+    private var planSeriesId: String? = null
+
+    /**
+     * The rule behind a single occurrence being corrected from the statement,
+     * held for the same reason [planSeriesId] is: the saved legs have to keep
+     * naming it, and the repeat controls that would rewrite it were never drawn.
+     */
+    private var occurrenceSeriesId: String? = null
 
     /**
      * What the user actually uses, most first, for the few chips each row shows
@@ -490,6 +549,25 @@ class AddEntryViewModel @Inject constructor(
                 note = detail.note.orEmpty(),
             )
             detail.seriesId?.let { seriesId ->
+                // The rule may belong to an arrangement rather than to the user:
+                // a premium, a deposit's instalment, a goal's own contribution.
+                // Then its rhythm and its two ends are the arrangement's — see
+                // [AddEntryUiState.planPaymentName] — and the rule stays out of
+                // editingSeriesId so saving touches this one date alone, exactly
+                // as a loan's instalment is handled below.
+                val plan = plans.findPlanBySeries(seriesId)
+                if (plan != null) {
+                    planSeriesId = seriesId
+                    _state.value = _state.value.copy(planPaymentName = plan)
+                    return@let
+                }
+                // A single date of a repeating transfer, from the statement:
+                // the rule is untouched and the corrected legs keep naming it.
+                if (editOccurrence) {
+                    occurrenceSeriesId = seriesId
+                    _state.value = _state.value.copy(isSingleOccurrence = true)
+                    return@let
+                }
                 editingSeriesId = seriesId
                 recurrence.findSeries(seriesId)?.let { series ->
                     _state.value = _state.value.copy(
@@ -559,6 +637,13 @@ class AddEntryViewModel @Inject constructor(
                 _state.value = _state.value.copy(isLoanInstalment = true)
                 return@let
             }
+            // The statement's single-date correction: the rule's controls stay
+            // its own, editingSeriesId stays null so saving touches this row
+            // alone, and the save's copy keeps the row on its rule.
+            if (editOccurrence) {
+                _state.value = _state.value.copy(isSingleOccurrence = true)
+                return@let
+            }
             editingSeriesId = seriesId
             recurrence.findSeries(seriesId)?.let { series ->
                 _state.value = _state.value.copy(
@@ -595,6 +680,10 @@ class AddEntryViewModel @Inject constructor(
      * deleted, which is simply an entry.
      */
     private suspend fun ruleAnchorFor(requested: String): String {
+        // The statement's ask: this one date, not the rule. The rule's own
+        // controls are withheld on the form for the same reason — see
+        // [AddEntryUiState.isSingleOccurrence].
+        if (editOccurrence) return requested
         val seriesId = repository.findEntry(requested)?.seriesId
             ?: repository.findTransfer(requested)?.seriesId
             ?: return requested
@@ -965,6 +1054,43 @@ class AddEntryViewModel @Inject constructor(
             _state.value = _state.value.copy(isSaved = true)
             return
         }
+        // One date of an arrangement's own schedule. Its two ends came off the
+        // rule and were never re-asked — the far end is the arrangement itself,
+        // which this form's account list deliberately does not hold, so looking
+        // either up in it would refuse a save the user was invited to make. The
+        // ids the occurrence was loaded with are the answer, and the legs keep
+        // naming the arrangement's rule.
+        if (current.isPlanPayment) {
+            val fromId = current.selectedAccountId
+            val toId = current.toAccountId
+            if (fromId == null || toId == null) {
+                _state.value = current.copy(error = EntryError.TRANSFER_ACCOUNTS)
+                return
+            }
+            val paid = MoneyFormatter(
+                CurrencyOption.byCode(current.currencyCode),
+                grouping = settingsStore.grouping,
+            ).parse(current.amountText)
+            if (paid == null || paid.minor <= 0L) {
+                _state.value = current.copy(error = EntryError.AMOUNT)
+                return
+            }
+            val result = repository.saveTransfer(
+                transferId = current.transferId,
+                fromAccountId = fromId,
+                toAccountId = toId,
+                amount = paid,
+                occurredOn = current.date,
+                note = current.note,
+                seriesId = planSeriesId,
+            )
+            _state.value = if (result is SaveResult.Success) {
+                current.copy(isSaved = true)
+            } else {
+                current.copy(error = EntryError.AMOUNT)
+            }
+            return
+        }
         val from = current.selectedAccount
         val to = current.toAccount
         if (from == null || to == null || from.id == to.id) {
@@ -1007,9 +1133,14 @@ class AddEntryViewModel @Inject constructor(
             )
         } else {
             editingSeriesId?.let { recurrence.deleteSeries(it) }
-            null
+            // A rule this form was not editing survives the save untouched —
+            // the repeat box was never drawn for it — and the corrected legs
+            // keep naming it: an arrangement's own schedule, or the rule behind
+            // the one date being corrected from a statement.
+            planSeriesId ?: occurrenceSeriesId
         }
         editingSeriesId = seriesId
+            .takeIf { planSeriesId == null && occurrenceSeriesId == null }
 
         val result = repository.saveTransfer(
             transferId = current.transferId,

@@ -266,6 +266,8 @@
     <string name="repeat_explain">हरेक पटक छुट्टै सुरक्षित हुन्छ र %1$s पात्रो प्रयोग हुन्छ। परिवर्तनले आउन बाँकीलाई मात्र असर गर्छ।</string>
     <string name="repeat_calendar_explain">हरेक कारोबार वा रेकर्ड %1$s पात्रो अनुसार हुन्छ।</string>
     <string name="entry_loan_instalment_note">ऋणको एक किस्ता। यसको तालिका ऋणसँगै छ।</string>
+    <string name="entry_plan_payment_note">%1$s को एउटा भुक्तानी। कहाँ जान्छ र कति पटक — ती व्यवस्थासँगै छन्; रकम र मिति यहीँ सच्याउन सकिन्छ।</string>
+    <string name="entry_single_occurrence_note">दोहोरिने भुक्तानीको एक मिति। यहाँको परिवर्तनले यही मितिलाई मात्र छुन्छ।</string>
     <string name="projected_balance">ब्यालेन्स %1$s</string>
     <string name="accounts_other">अन्य</string>
     <string name="accounts_owe">व्यक्तिगत तिर्नुपर्ने</string>

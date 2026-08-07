@@ -762,11 +762,17 @@ fun WalletApp(
                         ) {
                             AccountStatementScreen(
                                 onBack = { navController.popBackStack() },
-                                // A row opens where the movement belongs — the money
-                                // form, or the debt a payment counts against. Pushed
-                                // on top: back returns to the list it was read in.
+                                // A row opens the movement itself — and on this page
+                                // alone, the tapped *occurrence* rather than the rule
+                                // behind it. A statement is the record: a correction
+                                // made here is about the one date that came out
+                                // wrong, and the rule goes on saying what every
+                                // other month does. Pushed on top: back returns to
+                                // the list it was read in.
                                 onOpenEntry = { id ->
-                                    navController.navigate(Routes.addEntry(id))
+                                    navController.navigate(
+                                        Routes.addEntry(id, occurrence = true)
+                                    )
                                 },
                                 onOpenLoan = { id ->
                                     navController.navigate(Routes.holding(loanId = id))
@@ -817,6 +823,10 @@ fun WalletApp(
                                     defaultValue = "OUT"
                                 },
                                 navArgument(Routes.ARG_TRANSFER) {
+                                    type = NavType.StringType
+                                    defaultValue = "false"
+                                },
+                                navArgument(Routes.ARG_OCCURRENCE) {
                                     type = NavType.StringType
                                     defaultValue = "false"
                                 },

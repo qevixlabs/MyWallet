@@ -743,6 +743,19 @@ interface AccountDao {
     @Query("UPDATE account SET premium_series_id = :seriesId, updatedAt = :now WHERE id = :id")
     suspend fun setPremiumSeries(id: String, seriesId: String?, now: Long)
 
+    /**
+     * The arrangement a repeating rule pays into, if it pays into one.
+     *
+     * Asked by the money form before it offers to edit an occurrence: a policy's
+     * premium, a deposit's instalment and a goal's contribution are each one
+     * date of a schedule the arrangement owns, and the controls that would
+     * rewrite that schedule — where the money goes, and whether it repeats at
+     * all — are not this form's to offer. The same question
+     * [LoanRepository.findLoanBySeries] answers for a debt.
+     */
+    @Query("SELECT * FROM account WHERE premium_series_id = :seriesId AND deletedAt IS NULL LIMIT 1")
+    suspend fun findByPremiumSeries(seriesId: String): AccountEntity?
+
     @Query("UPDATE account SET deletedAt = :now, updatedAt = :now WHERE id = :id")
     suspend fun softDelete(id: String, now: Long)
 

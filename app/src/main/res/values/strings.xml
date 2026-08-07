@@ -407,6 +407,13 @@
          line only has to say what the answer means. -->
     <string name="repeat_calendar_explain">Every transaction or log follows the %1$s calendar.</string>
     <string name="entry_loan_instalment_note">One payment of a loan. Its schedule lives with the loan itself.</string>
+    <!-- One date of an arrangement's own schedule — a premium, a deposit's
+         instalment, a goal's contribution. The two ends and the rhythm are the
+         arrangement's; the figure and the day stay the user's to correct. -->
+    <string name="entry_plan_payment_note">One payment of %1$s. Where it goes and how often are part of that arrangement; the amount and the day can be corrected here.</string>
+    <!-- One date of a repeating payment, opened from a statement. Corrections
+         stop at this date; the rule is edited from its own row on the Timeline. -->
+    <string name="entry_single_occurrence_note">Part of a repeating payment. Changes here affect only this date.</string>
     <string name="projected_balance">Balance %1$s</string>
     <!-- Loans -->
     <string name="accounts_other">Other</string>

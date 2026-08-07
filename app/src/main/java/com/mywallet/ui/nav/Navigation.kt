@@ -107,18 +107,32 @@ object Routes {
      */
     const val ARG_TRANSFER = "transfer"
 
+    /**
+     * Open the tapped occurrence itself, not the rule it came from.
+     *
+     * A repeating row opens its rule everywhere the page is about the plan —
+     * Home, the Timeline, Reminders — because the rule is what those rows are.
+     * A statement is the record, and a correction made there is about one date:
+     * July's charge that came out wrong is fixed on July's row, and the rule
+     * goes on saying what every other month does.
+     */
+    const val ARG_OCCURRENCE = "occurrence"
+
     /** @param entryId null to add, an id to edit an existing entry. */
     fun addEntry(
         entryId: String? = null,
         direction: String = "OUT",
         transfer: Boolean = false,
+        occurrence: Boolean = false,
     ): String =
         "$ADD_ENTRY_BASE?$ARG_ENTRY_ID=${entryId.orEmpty()}" +
-            "&$ARG_DIRECTION=$direction&$ARG_TRANSFER=$transfer"
+            "&$ARG_DIRECTION=$direction&$ARG_TRANSFER=$transfer" +
+            "&$ARG_OCCURRENCE=$occurrence"
 
     const val ADD_ENTRY_PATTERN =
         "$ADD_ENTRY_BASE?$ARG_ENTRY_ID={$ARG_ENTRY_ID}" +
-            "&$ARG_DIRECTION={$ARG_DIRECTION}&$ARG_TRANSFER={$ARG_TRANSFER}"
+            "&$ARG_DIRECTION={$ARG_DIRECTION}&$ARG_TRANSFER={$ARG_TRANSFER}" +
+            "&$ARG_OCCURRENCE={$ARG_OCCURRENCE}"
 }
 
 /**

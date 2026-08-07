@@ -56,6 +56,18 @@ class PlanRepository @Inject constructor(
 ) {
 
     /**
+     * The name of the arrangement a repeating rule pays into — a policy, a
+     * deposit or a goal — or null where the rule is the user's own.
+     *
+     * The money form asks before it offers to edit one occurrence: the rhythm of
+     * a premium belongs to the policy that agreed it, so the controls that would
+     * rewrite it are withheld and the two ends are stated rather than asked. The
+     * same question a debt is asked through `LoanRepository.findLoanBySeries`.
+     */
+    suspend fun findPlanBySeries(seriesId: String): String? =
+        accountDao.findByPremiumSeries(seriesId)?.name
+
+    /**
      * A policy: what it pays out and what each premium costs are both given.
      *
      * @param payFromAccountId the account the premiums leave. Required — a

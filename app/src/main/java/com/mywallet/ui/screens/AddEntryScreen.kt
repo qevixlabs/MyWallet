@@ -403,7 +403,33 @@ fun AddEntryScreen(
                 )
             }
 
-            if (state.isTransfer) {
+            // One date of an arrangement's own schedule — a premium, a
+            // deposit's instalment, a goal's contribution. Its two ends and its
+            // rhythm were agreed on the arrangement's card and belong to it, so
+            // they are stated rather than re-asked, exactly as a loan's
+            // instalment states its own; the figure and the day stay editable,
+            // which is what the row was opened for.
+            // One date of a repeating payment, corrected from the statement.
+            // The rule's own controls are not drawn — see
+            // [AddEntryUiState.isSingleOccurrence] — and this line is what says
+            // the edit stops at this date.
+            if (state.isSingleOccurrence) {
+                Text(
+                    text = stringResource(R.string.entry_single_occurrence_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            state.planPaymentName?.let { name ->
+                Text(
+                    text = stringResource(R.string.entry_plan_payment_note, name),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            if (state.isTransfer && !state.isPlanPayment) {
                 Reveal {
                 Column {
                     SectionHeader(
