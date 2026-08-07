@@ -1508,6 +1508,14 @@ class LoanRepository @Inject constructor(
      * was written the day they promised it. One copy of the arithmetic, so a
      * payment folded in on its own day pays exactly what it would have paid on
      * the day it was recorded.
+     *
+     * @param amount how much comes **off** the balance, and **negative to put
+     *   money on** — which is what more borrowed on a debt that has a schedule
+     *   is (see [increaseLoan]). The arithmetic is the same operation in both
+     *   directions: what was owed on the day, moved by this figure, with the
+     *   schedule rebuilt around the answer. Only [record] must not be asked for
+     *   on a negative one — that writes a *payment* row, and there is no such
+     *   thing as a payment of minus रू 2,000; a top-up writes its own adjustment.
      */
     private suspend fun rebase(
         entity: LoanEntity,
@@ -1604,14 +1612,32 @@ class LoanRepository @Inject constructor(
                 newTerm = remaining
                 newEmi = LoanMath.periodInterest(newBalance, rate, gap).takeIf { it.isPositive }
             }
-            InstalmentStyle.LEVEL_EMI -> if (keepInstalment && currentEmi != null) {
-                newTerm = LoanMath.tenureAfterPrepayment(
-                    newBalance, rate, currentEmi, gap, accrual = rebased,
-                )
-                newEmi = currentEmi
-            } else {
-                newTerm = remaining
-                newEmi = remaining?.let { LoanMath.emiAfterPrepayment(newBalance, rate, it, gap) }
+            InstalmentStyle.LEVEL_EMI -> {
+                // Keeping the instalment is the answer wherever the instalment
+                // can still be kept. On a balance that went *up* it sometimes
+                // cannot: an instalment that no longer covers the interest on the
+                // larger figure clears the debt in no number of payments, which
+                // is why [LoanMath.tenureAfterPrepayment] refuses it rather than
+                // returning some huge tenure. Then the instalment is what has to
+                // give, over the term that is left. A prepayment never reaches
+                // this — a balance only falls, and an instalment that covered the
+                // old one covers the smaller one.
+                val kept = currentEmi
+                    ?.takeIf { keepInstalment }
+                    ?.let { emi ->
+                        LoanMath.tenureAfterPrepayment(
+                            newBalance, rate, emi, gap, accrual = rebased,
+                        )?.let { it to emi }
+                    }
+                if (kept != null) {
+                    newTerm = kept.first
+                    newEmi = kept.second
+                } else {
+                    newTerm = remaining
+                    newEmi = remaining?.let {
+                        LoanMath.emiAfterPrepayment(newBalance, rate, it, gap)
+                    }
+                }
             }
         }
 
@@ -2182,21 +2208,35 @@ class LoanRepository @Inject constructor(
      * reason a drawdown is: borrowing is not earning, and lending is not
      * spending. Only the balance moves; the month's figures stay honest.
      *
-     * Refused on anything with an amortisation schedule. Adding to the principal
-     * of a term loan while leaving its instalment and term alone would leave a
-     * schedule that no longer clears the debt — a bank top-up re-bases the whole
-     * loan, the way [applyPrepayment] does in the other direction, and that is a
-     * different operation from this one. An overdraft grows by being drawn on:
-     * see [drawFromOverdraft]. The form offers this on neither.
+     * **A debt on a schedule is re-based on it; a debt without one simply grows.**
+     * Both are this operation, and the split is only in what has to happen to the
+     * schedule afterwards. A balance that settles in one go is a figure, and more
+     * borrowed moves it. A term loan's balance is derived from its instalment and
+     * its term, so adding to the principal and leaving those alone would leave a
+     * schedule that no longer clears the debt — which is why this used to be
+     * refused outright on anything carrying an instalment. Refusing it is the one
+     * answer that was certainly wrong: the card took the figure, said the money
+     * had been borrowed, and left the balance exactly where it was.
      *
-     * What says a debt has such a schedule is its **instalment**, not its
-     * length. This asked for a term of zero, and money between people is exactly
-     * the debt that has a length and no schedule: agreeing to pay Sita back
-     * within a year sets `term_months` and leaves `emi_minor` null by design, so
-     * lending her another रू 2,000 was silently refused — the card took the
-     * figure, said nothing, and left the balance where it was. A `null` instalment
-     * is what makes a debt one that settles in one go, which is a balance a
-     * top-up simply moves.
+     * So it re-bases, which is [applyPrepayment]'s arithmetic run the other way —
+     * the same [rebase], handed a negative figure. What was owed on the day the
+     * money arrived goes up by it, interest runs on the larger balance from that
+     * day, and the schedule is rebuilt around it.
+     *
+     * **The instalment is what is kept** (`keepInstalment = true`), so the term
+     * lengthens. Two reasons, and the second is the one that settles it. A
+     * borrower's monthly commitment is the figure their month is arranged around,
+     * and a card with no second question on it must not silently raise it. And
+     * this is the direction the *reversal* runs: taking a movement back off a
+     * debt keeps the instalment and works the term out again ([shiftBalance]), so
+     * a top-up that kept the instalment is exactly undone by deleting it, where
+     * one that had raised it would leave the raised figure behind for ever. Where
+     * the instalment cannot be kept — a top-up so large that it no longer covers
+     * the interest — [rebase] raises it over the term that is left, that being
+     * the only honest answer left.
+     *
+     * An overdraft grows by being drawn on: see [drawFromOverdraft]. The form
+     * offers this on neither.
      *
      * @param accountId where the money went or came from, defaulting to the
      *   account the arrangement was made through. Optional: the debt is the fact
@@ -2213,7 +2253,6 @@ class LoanRepository @Inject constructor(
         if (amount.minor <= 0L) return SaveResult.AmountRequired
         val entity = loanDao.findById(loanId) ?: return SaveResult.AccountRequired
         if (entity.kind == LoanKind.OVERDRAFT) return SaveResult.AmountRequired
-        if (entity.emiMinor != null) return SaveResult.AmountRequired
 
         val now = clock.nowMillis()
         val lent = entity.loanDirection == LoanDirection.LENT
@@ -2226,6 +2265,41 @@ class LoanRepository @Inject constructor(
             baseMinorUnits = CurrencyOption.byCode(baseCode).minorUnits,
         )
         val entryId = UUID.randomUUID().toString()
+        // The loan is moved **before** the row is written, exactly as a lump sum
+        // is: what a top-up is added to is what was owed on the day it arrived,
+        // and that figure is read off the loan. Writing the row first would leave
+        // the arithmetic reading a debt that already included the money being
+        // added to it.
+        if (amortises(entity) && entity.emiMinor != null) {
+            rebase(entity, -amount, date, keepInstalment = true)
+            // The one figure a re-basing deliberately leaves alone, and the one a
+            // top-up has to move: `advanced_minor` is everything ever put out on
+            // this arrangement, which is now this much more. Read back rather
+            // than copied from `entity`, since the re-basing has just rewritten
+            // five other columns and this must not put any of them back.
+            loanDao.findById(loanId)?.let { rebased ->
+                rebased.advancedMinor?.let {
+                    loanDao.upsert(
+                        rebased.copy(advancedMinor = it + amount.minor, updatedAt = now)
+                    )
+                }
+            }
+        } else {
+            val grown = entity.copy(
+                principalMinor = entity.principalMinor + amount.minor,
+                // More borrowed on the same arrangement is more advanced on it, so
+                // this is the one thing that moves the sum taken. A loan that has
+                // no answer on file gains none here: the figure would be the
+                // top-up alone, which is a smaller lie than none but a lie still.
+                advancedMinor = entity.advancedMinor?.plus(amount.minor),
+                updatedAt = now,
+            )
+            loanDao.upsert(grown)
+            // A loan that settles in one go carries the whole balance as its
+            // single occurrence. Left at the old figure, the forecast would go on
+            // showing the smaller lump falling due on the day it is owed.
+            rewriteOneGoSeries(grown)
+        }
         entryDao.upsert(
             MoneyEntryEntity(
                 id = entryId,
@@ -2255,21 +2329,9 @@ class LoanRepository @Inject constructor(
                 updatedAt = now,
             )
         )
-        val grown = entity.copy(
-            principalMinor = entity.principalMinor + amount.minor,
-            // More borrowed on the same arrangement is more advanced on it, so
-            // this is the one thing that moves the sum taken. A loan that has no
-            // answer on file gains none here: the figure would be the top-up
-            // alone, which is a smaller lie than none but a lie all the same.
-            advancedMinor = entity.advancedMinor?.plus(amount.minor),
-            updatedAt = now,
-        )
-        loanDao.upsert(grown)
-
-        // A loan that settles in one go carries the whole balance as its single
-        // occurrence. Left at the old figure, the forecast would go on showing
-        // the smaller lump falling due on the day it is owed.
-        rewriteOneGoSeries(grown)
+        // From the day the money arrived, on the larger balance — which is the
+        // whole of what "borrowed more on the 20th" means. Both paths above have
+        // already left the loan carrying that balance.
         interest.repostIfBefore(date)
         return SaveResult.Success(entryId)
     }

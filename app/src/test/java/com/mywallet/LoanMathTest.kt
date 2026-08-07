@@ -308,6 +308,34 @@ class LoanMathTest {
         assertNull(LoanMath.tenureAfterPrepayment(Money(1_000_000_00), 12.0, Money(5_000_00)))
     }
 
+    /**
+     * The same call read the other way round — what `increaseLoan` leans on when
+     * more is borrowed on a debt that has a schedule. Keeping the instalment on a
+     * *larger* balance is the mirror of keeping it on a smaller one, and the term
+     * is what gives.
+     */
+    @Test
+    fun `keeping the instalment after borrowing more lengthens the term`() {
+        val emi = LoanMath.emi(Money(1_000_000_00), 12.0, 120)!!
+        val before = LoanMath.tenureAfterPrepayment(Money(800_000_00), 12.0, emi)!!
+        val after = LoanMath.tenureAfterPrepayment(Money(900_000_00), 12.0, emi)!!
+        assertTrue("borrowing more at the same instalment must take longer", after > before)
+    }
+
+    /**
+     * And the case the re-basing has to fall back on: borrow enough and the
+     * instalment stops covering the interest, so no term keeps it. The instalment
+     * is then raised over the term that is left instead — which is the same
+     * arithmetic the "keep the end date" route already uses.
+     */
+    @Test
+    fun `borrowing past what the instalment can service refuses the term and raises it`() {
+        val emi = Money(9_000_00)
+        assertNull(LoanMath.tenureAfterPrepayment(Money(1_000_000_00), 12.0, emi))
+        val raised = LoanMath.emiAfterPrepayment(Money(1_000_000_00), 12.0, 120)!!
+        assertTrue("the instalment has to rise to clear it at all", raised > emi)
+    }
+
     @Test
     fun `prepayment comparison offers both routes and saves interest either way`() {
         val emi = LoanMath.emi(Money(1_000_000_00), 12.0, 120)!!

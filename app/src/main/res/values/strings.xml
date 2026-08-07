@@ -627,7 +627,7 @@
     <!-- The ledger: everything that has actually happened to one loan -->
     <string name="loan_ledger_open">See every payment</string>
     <string name="loan_ledger_title">Payment by payment</string>
-    <string name="loan_ledger_explain">Tap a payment to see how it was worked out. Swipe it left to delete it: the balance will be restored, and a missed instalment is added to the next one.</string>
+    <string name="loan_ledger_explain">Tap an instalment to see how it was worked out, or a payment you recorded to correct it. Swipe it left to delete it: the balance will be restored, and a missed instalment is added to the next one.</string>
     <!-- Money between people has no schedule, so there is no missed instalment
          to warn about: the sentence stops at what the swipe does and what comes
          back. -->

@@ -157,7 +157,7 @@ fun LoanLedgerScreen(
     // with a person is the user's own entries and nothing else — see the screen
     // doc — so there is nothing on those rows the app worked out and nothing to
     // show the working of.
-    val turns = state.kind != LoanKind.PERSONAL
+    val turnsHere = state.kind != LoanKind.PERSONAL
     // And says so once it has gone, the way every other list that removes a
     // movement does. A row vanishing from under the thumb with nothing said
     // reads as the page having glitched rather than as the delete landing.
@@ -278,6 +278,17 @@ fun LoanLedgerScreen(
                         )
                         // Every payment swipes away, an instalment included; the
                         // debt arriving does not — see [LedgerRow.canDelete].
+                        // **A lump sum opens even on a bank's loan.** A tap turns
+                        // a row over where the app has working to show, and it
+                        // has none on this one: a payment off the balance is a
+                        // figure the user typed on the debt's own Payment card,
+                        // on a day they chose, and every part of it went on the
+                        // debt — there is no split to explain and nothing behind
+                        // it but the two numbers already on the front. What that
+                        // row can want is what any row the user wrote wants,
+                        // which is to be corrected. So the page's answer is the
+                        // default and the row overrides it.
+                        val turns = turnsHere && row.kind != LoanMovementKind.PRINCIPAL
                         val onClick = {
                             if (turns) {
                                 if (!turned.remove(row.id)) turned.add(row.id)
