@@ -261,6 +261,10 @@ fun HomeScreen(
                     EntryRow(
                         entry = entry,
                         onClick = { openEntry(entry, onOpenEntry) },
+                        // Headed by which way the money ran, exactly as a
+                        // Reminders row is — same mark, same size, same gap.
+                        // One arrow means one thing on every list.
+                        showMark = true,
                         modifier = Modifier
                             .background(rowStripe(index))
                             .padding(horizontal = LIST_PANEL_ROW_INSET),

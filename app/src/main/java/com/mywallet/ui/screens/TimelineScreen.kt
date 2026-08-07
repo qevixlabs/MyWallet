@@ -420,6 +420,10 @@ fun TimelineScreen(
                                 entry = entry,
                                 onClick = { openEntry(entry, onOpenEntry) },
                                 showDate = false,
+                                // The same mark Reminders rows lead with. The
+                                // date owns this page's margins; the mark is
+                                // inside the row, where its rows start.
+                                showMark = true,
                             )
                             // A break inside the day, not the end of it — see
                             // [RowSeparator]. Drawn inside the swipeable row
@@ -983,6 +987,9 @@ private fun ProjectedRow(
             ProjectedEntryRow(
                 projected = projected,
                 onOpen = { onOpen(projected.seriesId) },
+                // Marked like the rows above it: a day still to come is drawn
+                // exactly as one that has happened, mark included.
+                showMark = true,
             )
             if (!last) RowSeparator()
         }
