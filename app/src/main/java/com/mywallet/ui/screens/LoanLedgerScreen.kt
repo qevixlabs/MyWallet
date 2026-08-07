@@ -10,13 +10,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.CallReceived
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.Percent
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,8 +43,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -60,6 +69,7 @@ import com.mywallet.ui.components.listPanel
 import com.mywallet.ui.components.rowStripe
 import com.mywallet.ui.labelRes
 import com.mywallet.ui.withNote
+import com.mywallet.ui.theme.DayNumberStyle
 import com.mywallet.ui.theme.MoneySmallStyle
 import com.mywallet.ui.theme.TitleStyle
 import com.mywallet.ui.theme.WalletTheme
@@ -224,12 +234,6 @@ fun LoanLedgerScreen(
                         // Banded like every other list of movements — see
                         // [rowStripe]. Inside the swipe, so a drag still uncovers
                         // the red rather than this.
-                        //
-                        // The band is *all* that separates them. There used to be a
-                        // hairline under every row as well, which is a ladder — and
-                        // it made this page and an account's statement, the same
-                        // list about the other kind of holding, two different-looking
-                        // screens.
                         val banded = Modifier.background(rowStripe(index))
                         // On the same paper Home and Reminders lay their movements
                         // on, and the same paper the account statement — the same
@@ -309,21 +313,38 @@ fun LoanLedgerScreen(
 private fun LedgerSummary(state: LoanLedgerState, outstanding: String) {
     val colors = WalletTheme.colors
     WalletCard(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
-        Text(
-            text = stringResource(
-                when {
-                    state.isOverdraft -> R.string.loan_drawn_title
-                    state.isLent -> R.string.loan_owed_to_you_title
-                    else -> R.string.loan_owed_title
-                }
-            ).uppercase(),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        // The eyebrow wears the mark of what this figure is — drawn on a
+        // facility, coming back from a person, or owed to a bank — the way
+        // every card on the holding's own editor heads itself.
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = when {
+                    state.isOverdraft -> Icons.Outlined.CreditCard
+                    state.isLent -> Icons.AutoMirrored.Outlined.CallReceived
+                    else -> Icons.Outlined.Payments
+                },
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(14.dp),
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = stringResource(
+                    when {
+                        state.isOverdraft -> R.string.loan_drawn_title
+                        state.isLent -> R.string.loan_owed_to_you_title
+                        else -> R.string.loan_owed_title
+                    }
+                ).uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Spacer(Modifier.height(4.dp))
         Text(text = outstanding, style = MaterialTheme.typography.headlineSmall)
         // What the debt comes to in the currency the totals are read in — the
-        // second line every foreign figure in the app carries.
+        // second line every foreign figure in the app carries. Unmarked: it is
+        // the headline said again, not a fact of its own.
         state.outstandingConverted?.let {
             Text(
                 text = it,
@@ -331,32 +352,37 @@ private fun LedgerSummary(state: LoanLedgerState, outstanding: String) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        // Each line below carries a small quiet mark of what kind of fact it
+        // is, so the card reads as a keyed summary rather than a paragraph.
+        // The marks stay in the quiet ink whatever colour the words take: the
+        // words carry the judgement, the mark only says which fact.
         state.totalPaid?.let {
-            Text(
+            SummaryLine(
+                icon = Icons.Outlined.Check,
                 text = stringResource(
                     if (state.isLent) R.string.loan_ledger_received else R.string.loan_ledger_paid,
                     it,
                 ),
-                style = MaterialTheme.typography.bodyMedium,
-                color = WalletTheme.colors.moneyIn,
-                modifier = Modifier.padding(top = 6.dp),
+                color = colors.moneyIn,
+                topPadding = 6.dp,
             )
         }
         state.totalAdded?.let {
-            Text(
+            SummaryLine(
+                icon = Icons.Outlined.Add,
                 text = stringResource(
                     if (state.isLent) R.string.loan_ledger_lent_more else R.string.loan_ledger_added,
                     it,
                 ),
-                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 2.dp),
+                topPadding = 2.dp,
             )
         }
         // Interest carries no date, so it sits here rather than among the rows:
         // no day did it, and a dated line for it would be a payment nobody made.
         state.accruedInterest?.let {
-            Text(
+            SummaryLine(
+                icon = Icons.Outlined.Percent,
                 text = stringResource(
                     if (state.isLent) {
                         R.string.loan_interest_accrued_lent
@@ -365,20 +391,73 @@ private fun LedgerSummary(state: LoanLedgerState, outstanding: String) {
                     },
                     it,
                 ),
-                style = MaterialTheme.typography.bodyMedium,
                 color = if (state.isLent) colors.moneyIn else colors.debt,
-                modifier = Modifier.padding(top = 6.dp),
+                topPadding = 6.dp,
             )
         }
         state.settleToday?.let {
-            Text(
+            SummaryLine(
+                icon = Icons.Outlined.Payments,
                 text = stringResource(R.string.loan_settle_today, it),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 2.dp),
+                color = MaterialTheme.colorScheme.onSurface,
+                topPadding = 2.dp,
             )
         }
     }
 }
+
+/** One fact of the summary: a quiet mark, then the sentence. */
+@Composable
+private fun SummaryLine(
+    icon: ImageVector,
+    text: String,
+    color: Color,
+    topPadding: Dp,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(top = topPadding),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(14.dp),
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(text = text, style = MaterialTheme.typography.bodyMedium, color = color)
+    }
+}
+
+/**
+ * The day a payment fell on, at the head of its own row — the timeline's big
+ * figure worn the way Home's rows wear their mark, since this list has no day
+ * groups to hang a heading on: a debt moves a handful of times a year, and a
+ * heading over every single row was a page of headings.
+ *
+ * The figure alone, in whichever calendar is being read. Which month and which
+ * year it counts in — a debt's statement spans years, and "20" alone cannot be
+ * told from the same day three years earlier — is the tail of the row's own
+ * subtext, where the rest of what the payment has to say already is.
+ *
+ * A fixed width, so every row's words start at the same place whatever digits
+ * the day is made of — the column is read down, and a ragged left edge on the
+ * payments reads as disorder rather than as dates.
+ */
+@Composable
+private fun LedgerRowDate(date: java.time.LocalDate) {
+    val dates = LocalDateDisplay.current
+    Text(
+        text = dates.dayNumber(date),
+        style = DayNumberStyle,
+        color = MaterialTheme.colorScheme.onSurface,
+        maxLines = 1,
+        modifier = Modifier.width(LEDGER_DATE_WIDTH),
+    )
+}
+
+/** Two digits of [DayNumberStyle], with a little air after them. */
+private val LEDGER_DATE_WIDTH = 44.dp
 
 /**
  * One line of the statement: when, what, how much, and what was left.
@@ -397,8 +476,8 @@ private fun LedgerRowView(
     modifier: Modifier = Modifier,
     onOpenEntry: (String) -> Unit = {},
 ) {
-    val dates = LocalDateDisplay.current
     val colors = WalletTheme.colors
+    val dates = LocalDateDisplay.current
 
     Row(
         modifier = modifier
@@ -413,22 +492,16 @@ private fun LedgerRowView(
             .padding(horizontal = LIST_PANEL_ROW_INSET, vertical = 12.dp),
         verticalAlignment = Alignment.Top,
     ) {
+        LedgerRowDate(date = row.date)
+        Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                // With the year, unlike a day header on the timeline. A debt
-                // between people can run for years, and "20 Saun" on its own
-                // cannot be told from the same day three years earlier — which
-                // is exactly the row someone will be disputing.
-                text = dates.full(row.date),
-                style = MaterialTheme.typography.bodyLarge,
-            )
-            Text(
                 // What the movement did, with what the user wrote about it on
-                // the end — "Borrowed more - car repair". The note used to sit
-                // on a line of its own below, which said the same thing in two
-                // places on the ledger and in one on every other list; joined
-                // here it is the one sentence the app writes about a payment,
-                // written the same way wherever the payment is drawn.
+                // the end — "Borrowed more - car repair": the one sentence the
+                // app writes about a payment, leading the row's words now that
+                // the date is the figure beside them. The date lines the row
+                // used to carry — one calendar on top and the other two lines
+                // below — are that figure's block. See [LedgerRowDate].
                 //
                 // **Except on something bought with the facility, where the note
                 // is the whole of it.** What the user typed is the name of the
@@ -438,26 +511,29 @@ private fun LedgerRowView(
                 // already the page's own heading; what a row has to say is which
                 // purchase it was. Only where nothing was typed does the plain
                 // word stand in, since a row cannot be blank.
+                text = if (row.kind == LoanMovementKind.SPEND) {
+                    row.note ?: stringResource(R.string.loan_movement_spent)
+                } else {
+                    stringResource(row.kind.labelRes(isLent, kind)).withNote(row.note)
+                },
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            // The holding the money passed through, then which month — and,
+            // reading Nepali, the English date the way a patro prints it in
+            // the corner. The day's own figure is the big one beside the row;
+            // this line is what that figure alone cannot say, said last, after
+            // the words that tell this payment from the others.
+            Text(
                 text = listOfNotNull(
-                    if (row.kind == LoanMovementKind.SPEND) {
-                        row.note ?: stringResource(R.string.loan_movement_spent)
-                    } else {
-                        stringResource(row.kind.labelRes(isLent, kind)).withNote(row.note)
-                    },
                     row.accountName,
+                    dates.monthAndYear(row.date),
+                    dates.secondaryShort(row.date),
                 ).joinToString(" · "),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
-            dates.secondary(row.date)?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
             // What the instalment bought. Early on most of it is interest, and a
             // debt that barely moved after a full payment reads as the app
             // having lost the money unless the row says why.
