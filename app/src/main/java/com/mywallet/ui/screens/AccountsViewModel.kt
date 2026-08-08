@@ -103,6 +103,22 @@ data class AccountsUiState(
     // ever the value between the view model being constructed and its first
     // emission, where no row is drawn to read it.
     val today: LocalDate = LocalDate.ofEpochDay(0),
+    /**
+     * True until the figures are real, so nothing is drawn that is about to
+     * change.
+     *
+     * Every field above starts at zero or empty, and that state is a sentence
+     * the page must not say: it opened claiming the user holds रू 0, owes
+     * nothing and banks nowhere, then replaced all of it a frame later. The
+     * card is the worst of it, being the largest number on the screen and the
+     * one a reader takes in first.
+     *
+     * Deliberately **not** a spinner. Nothing in this app shows one — the other
+     * screens use their own flag exactly this way, to withhold a wrong answer
+     * rather than to announce that work is happening — and a spinner appearing
+     * for two frames is a flicker of its own.
+     */
+    val isLoading: Boolean = true,
 )
 
 @HiltViewModel
@@ -262,6 +278,7 @@ class AccountsViewModel @Inject constructor(
                 hasUnconvertible = accounts.any { it.balanceInBase == null },
                 adjusting = adjustState,
                 today = clock.today(),
+                isLoading = false,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AccountsUiState())
 

@@ -1102,6 +1102,15 @@ class WalletRepository @Inject constructor(
         status = status,
         seriesId = seriesId,
         loanId = loanId,
+        // Which half of a debt this row paid, which this mapper used to drop.
+        // It is the one field that tells money *taken from* a debt from money
+        // *handed back* on one — both are money in, against a loan, written as
+        // an adjustment — so leaving it null meant the entry form asked
+        // [LoanLedger.isDrawdown] a question it could only answer one way. A
+        // रू 500 repayment from somebody the user had lent to reopened saying
+        // "Taken from abc. Borrowed money is not income", which is the opposite
+        // of what happened.
+        loanPart = loanPart,
         amount = Money(amountMinor),
         currencyCode = currencyCode,
         baseAmount = Money(baseAmountMinor),

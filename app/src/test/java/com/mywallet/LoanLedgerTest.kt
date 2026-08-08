@@ -13,7 +13,9 @@ import com.mywallet.domain.LoanMovementKind
 import com.mywallet.domain.MovementReversal
 import com.mywallet.domain.reversal
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
 
@@ -323,6 +325,52 @@ class LoanLedgerTest {
         fromSeries = fact.fromSeries,
         isAdjustment = fact.isAdjustment,
     )
+
+    /**
+     * The entry form asks this to decide whether a row is money *taken from* a
+     * debt, and a repayment that answered yes reopened describing the opposite
+     * act — "Taken from abc. Borrowed money is not income" over money that had
+     * come back the other way.
+     */
+    @Test
+    fun `money handed back on a debt is not a drawdown, whatever its adjustment flag says`() {
+        // What a real drawdown looks like: money in, against a facility, an
+        // adjustment, and carrying no part.
+        assertTrue(
+            LoanLedger.isDrawdown(
+                loanId = "L3", part = null, isAdjustment = true, isMoneyIn = true,
+            )
+        )
+        // A repayment on money lent out is written exactly the same way but for
+        // the part, which is the whole of the difference.
+        assertFalse(
+            LoanLedger.isDrawdown(
+                loanId = "L3", part = LoanPart.PRINCIPAL, isAdjustment = true, isMoneyIn = true,
+            )
+        )
+        assertFalse(
+            LoanLedger.isDrawdown(
+                loanId = "L3", part = LoanPart.INTEREST, isAdjustment = true, isMoneyIn = true,
+            )
+        )
+        // And the three it always refused: money going the other way, a row
+        // that names no debt, and one that is not an adjustment.
+        assertFalse(
+            LoanLedger.isDrawdown(
+                loanId = "L3", part = null, isAdjustment = true, isMoneyIn = false,
+            )
+        )
+        assertFalse(
+            LoanLedger.isDrawdown(
+                loanId = null, part = null, isAdjustment = true, isMoneyIn = true,
+            )
+        )
+        assertFalse(
+            LoanLedger.isDrawdown(
+                loanId = "L3", part = null, isAdjustment = false, isMoneyIn = true,
+            )
+        )
+    }
 
     private fun repaid(date: LocalDate, amount: Money) =
         fact(date, amount, part = LoanPart.PRINCIPAL)

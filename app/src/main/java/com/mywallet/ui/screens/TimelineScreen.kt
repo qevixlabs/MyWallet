@@ -246,6 +246,13 @@ fun TimelineScreen(
             }
         }
 
+        // A month still being counted is not an empty month, and the two look
+        // identical from here — see [TimelineUiState.isLoading]. The month
+        // stepper above stays: which month is being read is already decided,
+        // and it is the one control that must not flicker away under a thumb
+        // stepping through them.
+        if (state.isLoading) return@LazyColumn
+
         if (state.isEmpty) {
             item {
                 EmptyState(

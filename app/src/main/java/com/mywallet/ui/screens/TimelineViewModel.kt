@@ -109,6 +109,13 @@ data class TimelineUiState(
     /** And what a person is — kept apart, as the Accounts page keeps them. */
     val personalLoans: List<LoanOutlook> = emptyList(),
     val lentOut: List<LoanOutlook> = emptyList(),
+    /**
+     * True until this month has actually been worked out — see
+     * [AccountsUiState.isLoading], which withholds its page for the same
+     * reason. Here the wrong answer is [isEmpty], which draws "nothing
+     * happened this month" over a month that is merely still being counted.
+     */
+    val isLoading: Boolean = true,
 ) {
     val isEmpty: Boolean get() = days.isEmpty() && projectedDays.isEmpty()
     val hasSchedule: Boolean get() = projectedDays.isNotEmpty()
@@ -483,6 +490,7 @@ class TimelineViewModel @Inject constructor(
                     loans = fromBanks,
                     personalLoans = personal,
                     lentOut = given,
+                    isLoading = false,
                 )
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TimelineUiState())

@@ -20,6 +20,7 @@ import com.mywallet.data.repo.WalletRepository
 import com.mywallet.data.settings.SettingsStore
 import com.mywallet.domain.Account
 import com.mywallet.domain.Loan
+import com.mywallet.domain.LoanLedger
 import com.mywallet.domain.Shortlist
 import com.mywallet.ui.nav.Routes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -629,10 +630,18 @@ class AddEntryViewModel @Inject constructor(
         pinnedAccountId = entry.accountId
         // Reopening a drawdown must look like the form that created it: the
         // overdraft it came from is a fact to show, not a label to ask for.
-        val drawnFromName = if (entry.loanId != null &&
-            entry.isAdjustment && entry.direction == Direction.IN
+        //
+        // Asked of the domain rather than spelled out here, because getting it
+        // wrong inverts the sentence on the screen — see [LoanLedger.isDrawdown].
+        val drawnFromName = if (
+            LoanLedger.isDrawdown(
+                loanId = entry.loanId,
+                part = entry.loanPart,
+                isAdjustment = entry.isAdjustment,
+                isMoneyIn = entry.direction == Direction.IN,
+            )
         ) {
-            loans.findLoan(entry.loanId)?.name
+            loans.findLoan(entry.loanId!!)?.name
         } else {
             null
         }

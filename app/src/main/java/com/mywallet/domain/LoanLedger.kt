@@ -491,6 +491,30 @@ object LoanLedger {
         kindOf(isOpening, part, fromSeries, isAdjustment, isSpend)
 
     /**
+     * Whether a row reopened in the entry form is money **taken from** a debt —
+     * a drawdown on a facility, or a person's loan handed over — rather than
+     * money handed back on one.
+     *
+     * The form asks because the two want opposite screens: a drawdown is named
+     * after the arrangement it came from and has nothing to label, so it shows
+     * "Taken from Dad" where the note box would be.
+     *
+     * **The `loan_part` is what tells them apart, and leaving it out inverted
+     * the sentence.** Money in, against a debt, written as an adjustment
+     * describes both acts, so a repayment on money the user had *lent* reopened
+     * claiming it was borrowing: "Taken from abc. Borrowed money is not income"
+     * over a रू 500 payment that had come back the other way. A repayment
+     * carries `PRINCIPAL` — or `INTEREST` — and a drawdown carries neither,
+     * which is the same order [kindOf] has always tested them in.
+     */
+    fun isDrawdown(
+        loanId: String?,
+        part: LoanPart?,
+        isAdjustment: Boolean,
+        isMoneyIn: Boolean,
+    ): Boolean = loanId != null && part == null && isAdjustment && isMoneyIn
+
+    /**
      * How much this moved the balance, signed. Null when it cannot be said.
      *
      * A payment in another currency is exactly that case: converting it would

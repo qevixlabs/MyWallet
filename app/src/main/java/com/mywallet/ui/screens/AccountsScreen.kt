@@ -148,6 +148,12 @@ fun AccountsScreen(
                     .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 8.dp),
             )
         }
+        // The heading is a fact about the page and can be drawn straight away;
+        // nothing below it is, until the figures are real. See
+        // [AccountsUiState.isLoading] — an empty state is a sentence, and this
+        // page's version of it claimed the user holds nothing and banks
+        // nowhere.
+        if (state.isLoading) return@LazyColumn
         item {
             // The one card face in the app. What the user holds is the single
             // figure on this page nobody needs a label to want, and on the same
