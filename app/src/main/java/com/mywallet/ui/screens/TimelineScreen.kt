@@ -90,6 +90,7 @@ import com.mywallet.ui.labelRes
 import com.mywallet.ui.loanRowLabel
 import com.mywallet.ui.outstandingShown
 import com.mywallet.ui.shownAfter
+import com.mywallet.ui.theme.RowTitleStyle
 import com.mywallet.ui.theme.MoneyRowStyle
 import com.mywallet.ui.theme.MoneySmallStyle
 import com.mywallet.ui.theme.TutorialLight
@@ -842,7 +843,7 @@ private fun BalanceRow(
         LabelDot(color = dot ?: amountColor, size = 12.dp)
         Spacer(Modifier.width(14.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge)
+            Text(title, style = RowTitleStyle)
             subtitle?.let {
                 Text(
                     text = it,
@@ -1108,7 +1109,7 @@ fun ProjectedEntryRow(
             Spacer(Modifier.width(MOVEMENT_MARK_GAP))
         }
         Column(modifier = Modifier.weight(1f)) {
-            RouteText(text = title, style = MaterialTheme.typography.bodyLarge)
+            RouteText(text = title, style = RowTitleStyle)
             if (subtitle.isNotEmpty()) {
                 RouteText(
                     text = subtitle,

@@ -202,6 +202,15 @@ fun AddEntryScreen(
                 .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
+            // Nothing until the row has been read — see
+            // [AddEntryUiState.isLoading]. Which controls this form has depends
+            // on what the row turns out to be, and the state it starts in knows
+            // none of that: drawn straight away it put up the whole default form
+            // and then rearranged it a few hundred milliseconds later, boxes
+            // appearing and disappearing under the reader. The heading and the
+            // bin above stay, because both are true before anything is loaded.
+            if (state.isLoading) return@Column
+
             // **Which of the three this is, is settled once the row exists.** A
             // form opened on an entry is opened to correct what it says — the
             // amount, the day, the account, what it was for — not to turn one

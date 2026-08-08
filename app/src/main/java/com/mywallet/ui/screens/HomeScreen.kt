@@ -67,6 +67,7 @@ import com.mywallet.ui.holdingDisplayName
 import com.mywallet.ui.loanMovementLabel
 import com.mywallet.ui.loanRowLabel
 import com.mywallet.ui.overdraftRoute
+import com.mywallet.ui.theme.RowTitleStyle
 import com.mywallet.ui.theme.DayTotalStyle
 import com.mywallet.ui.theme.MoneyHeadlineStyle
 import com.mywallet.ui.theme.MoneyRowStyle
@@ -578,7 +579,7 @@ fun EntryRow(
             // the account it passed through included. See [entryTitle].
             RouteText(
                 text = entryTitle(entry),
-                style = MaterialTheme.typography.bodyLarge,
+                style = RowTitleStyle,
             )
             // What the row has to say besides its title, and never the date:
             // where the money went, which bank it passed through, what the

@@ -194,6 +194,22 @@ data class AddEntryUiState(
      */
     val applyFromRuleStart: LocalDate? = null,
     /**
+     * True until an entry being *edited* has actually been read.
+     *
+     * The form is a column of controls whose presence depends on what the row
+     * turns out to be — a loan movement has no repeat, an instalment has no
+     * fields at all, a card spend names no account — and the state it starts in
+     * knows none of that. So opening one drew the whole default form, then
+     * rearranged it a few hundred milliseconds later when the entry arrived:
+     * boxes appearing and vanishing under the reader's eyes. It is the same
+     * withholding the Accounts and Timeline pages do — draw nothing rather than
+     * draw something that is about to be unsaid.
+     *
+     * Only ever true when there is an id to load. A form opened to *add*
+     * something has nothing to wait for and must not flash a blank page.
+     */
+    val isLoading: Boolean = false,
+    /**
      * The card or overdraft an existing purchase was spent from, when editing
      * one.
      *
@@ -525,6 +541,8 @@ class AddEntryViewModel @Inject constructor(
         _state.value = _state.value.copy(
             direction = initialDirection,
             isTransfer = startsOnTransfer,
+            // Nothing is drawn until the row has been read — see [isLoading].
+            isLoading = entryId != null,
         )
         if (startsOnTransfer) autoSelectTransferDestination()
 
@@ -546,6 +564,7 @@ class AddEntryViewModel @Inject constructor(
             exchangeRates.refresh(base)
             entryId?.let { loadExisting(it) }
             updateConvertedPreview()
+            _state.value = _state.value.copy(isLoading = false)
         }
         // Before the lists arrive, so the first thing drawn is already in the
         // order the user reads it in. Three cheap grouped counts, not a walk.

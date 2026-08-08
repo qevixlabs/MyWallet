@@ -151,8 +151,30 @@ val DayNumberStyle: TextStyle = TextStyle(
     fontFamily = FontFamily.Default,
     fontWeight = FontWeight.SemiBold,
     fontStyle = FontStyle.Normal,
-    fontSize = 26.sp,
-    lineHeight = 32.sp,
+    // Brought down from 26. It is the bullet a day's rows hang off and it still
+    // has to be the thing the eye lands on when a month is scrolled past — but
+    // at 26 it was competing with the amounts on the rows underneath it, which
+    // are what the page is actually about.
+    fontSize = 24.sp,
+    lineHeight = 30.sp,
+    letterSpacing = 0.sp,
+)
+
+/**
+ * A row's own name, in every list that draws movements.
+ *
+ * `bodyLarge` at 16sp, which is what this was, is a *reading* size — right for
+ * a paragraph and a size too loud for a column of thirty rows, where the title
+ * competed with the figure on the right rather than labelling it. Two points
+ * down leaves the hierarchy intact: the line under it is still smaller, and the
+ * ink is still darker than the line under it, which is what separates them.
+ */
+val RowTitleStyle: TextStyle = TextStyle(
+    fontFamily = FontFamily.Default,
+    fontWeight = FontWeight.Normal,
+    fontStyle = FontStyle.Normal,
+    fontSize = 14.sp,
+    lineHeight = 20.sp,
     letterSpacing = 0.sp,
 )
 
