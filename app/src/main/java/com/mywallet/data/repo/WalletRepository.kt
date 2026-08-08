@@ -1189,15 +1189,32 @@ fun List<MoneyEntry>.groupByDay(): List<DayGroup> =
             DayGroup(
                 date = date,
                 entries = entries.reversed(),
-                // Adjustments are shown in the day but left out of its totals:
-                // a transfer or a balance correction is neither earned nor
-                // spent, and counting one would contradict every other figure.
+                // **The day's two figures add up the rows drawn under them, and
+                // nothing else.** They used to be an income-and-spending
+                // summary — `counts`, which leaves out every adjustment — while
+                // the list beneath drew adjustments that were not corrections:
+                // money lent to somebody, money borrowed, a repayment coming
+                // back. So a day whose only movement was "I lent Sita रू 8,000"
+                // showed the row and no total at all, and a reader adding the
+                // column up got a different answer from the app.
+                //
+                // The caller hands in exactly what it is about to draw — a
+                // transfer's arriving half and every balance correction are
+                // already gone by then — so summing what arrives here is the
+                // whole rule, and the header cannot disagree with the list again.
+                //
+                // Deliberately **not** the same question the month card asks.
+                // "Came in / went out / you kept" is about earning and spending,
+                // where borrowed money is not income and lent money is not an
+                // expense; these are unlabelled sums of a day's movements. Two
+                // different questions, and only this one has rows under it to be
+                // checked against.
                 moneyIn = Money(
-                    entries.filter { it.counts && it.direction == Direction.IN }
+                    entries.filter { it.direction == Direction.IN }
                         .sumOf { it.baseAmount.minor }
                 ),
                 moneyOut = Money(
-                    entries.filter { it.counts && it.direction == Direction.OUT }
+                    entries.filter { it.direction == Direction.OUT }
                         .sumOf { it.baseAmount.minor }
                 ),
             )

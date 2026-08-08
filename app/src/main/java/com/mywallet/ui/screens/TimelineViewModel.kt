@@ -506,20 +506,27 @@ class TimelineViewModel @Inject constructor(
     /**
      * Whether a row survives the current filter.
      *
-     * Adjustments are shown under "everything" — a transfer or a balance
-     * correction is a real thing that happened — but they are never money in or
-     * money out, so the two directional filters skip them.
+     * **By the direction it is drawn with, and nothing else.** The chips say
+     * *money out* and *money in*, not *spending* and *income*: they narrow a log
+     * to the rows pointing one way, and a row showing −रू 5,000 that vanishes
+     * when the reader asks for money out is the page arguing with itself.
+     *
+     * They used to skip every adjustment, which was written for a balance
+     * correction and quietly took money lent, money borrowed and repayments with
+     * it — those carry the same flag and are the movements most worth filtering
+     * to. A correction is not caught by this at all: it is dropped before the
+     * filter is ever asked, having nothing to draw.
      */
     private fun MoneyEntry.matches(filter: TimelineFilter): Boolean = when (filter) {
         TimelineFilter.ALL -> true
-        TimelineFilter.IN -> direction == Direction.IN && !isAdjustment
-        TimelineFilter.OUT -> direction == Direction.OUT && !isAdjustment
+        TimelineFilter.IN -> direction == Direction.IN
+        TimelineFilter.OUT -> direction == Direction.OUT
     }
 
     private fun ProjectedEntry.matches(filter: TimelineFilter): Boolean = when (filter) {
         TimelineFilter.ALL -> true
-        TimelineFilter.IN -> direction == Direction.IN && !isAdjustment
-        TimelineFilter.OUT -> direction == Direction.OUT && !isAdjustment
+        TimelineFilter.IN -> direction == Direction.IN
+        TimelineFilter.OUT -> direction == Direction.OUT
     }
 
     fun showPreviousMonth() { months.show(monthOffset.value - 1) }
