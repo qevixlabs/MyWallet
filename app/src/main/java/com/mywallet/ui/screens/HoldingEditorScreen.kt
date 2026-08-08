@@ -2688,7 +2688,11 @@ private fun LoanFields(
         // until money is actually drawn. Money between people has none either —
         // it goes back in one payment on one day — so it takes the same
         // shortcut, and is offered a total and a date instead further down.
-        if (state.hasInstalments) {
+        // Money between people is offered it too, once its length is known —
+        // see [HoldingEditorState.offersPayEvery]. Blank there until somebody
+        // types in it, and typing in it is the whole of how a debt that was
+        // going back in one go becomes one going back a bit at a time.
+        if (state.offersPayEvery) {
         // A figure and a unit, exactly as the length above it is given. The four
         // named frequencies could not say "every two months" — a real
         // arrangement, and one a borrower cannot round to the nearest offered
@@ -3012,7 +3016,17 @@ private fun LoanFields(
                 // not have.
                 if (!state.paysAtEnd) {
                     Text(
-                        text = stringResource(R.string.loan_first_due_hint),
+                        // No bank in it where there is no bank: money spread
+                        // between two people is collected by whoever lent it,
+                        // and a line naming a bank on that form reads as the
+                        // app describing somebody else's arrangement.
+                        text = stringResource(
+                            if (state.choice.group == HoldingGroup.PERSON) {
+                                R.string.loan_first_due_hint_person
+                            } else {
+                                R.string.loan_first_due_hint
+                            }
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

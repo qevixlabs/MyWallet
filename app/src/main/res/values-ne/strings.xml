@@ -430,6 +430,7 @@
     <string name="loan_disbursed_on">पैसा पाएको मिति</string>
     <string name="loan_first_due">पहिलो EMI मिति</string>
     <string name="loan_first_due_hint">बैंकले पहिलो EMI काट्ने दिन। यसपछिका हरेक किस्ता यही मिति + तपाईंले छानेको अन्तराल गरी गनिन्छ।</string>
+    <string name="loan_first_due_hint_person">पहिलो भुक्तानी हुने दिन। त्यसपछिका हरेक भुक्तानी यही मिति + तपाईंले छानेको अन्तरालबाट गनिन्छ।</string>
     <string name="loan_pick_date">मिति छान्नुहोस्</string>
     <string name="loan_no_date">मिति छैन</string>
     <string name="loan_opened_on">सुरु मिति</string>

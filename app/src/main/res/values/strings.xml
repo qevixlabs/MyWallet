@@ -610,6 +610,7 @@
     <string name="loan_disbursed_on">Money received date</string>
     <string name="loan_first_due">First EMI date</string>
     <string name="loan_first_due_hint">The day the bank takes the first EMI. Every later one is counted from this date + interval you selected.</string>
+    <string name="loan_first_due_hint_person">The day the first payment is made. Every later one is counted from this date + interval you selected.</string>
     <string name="loan_pick_date">Pick a date</string>
     <string name="loan_no_date">No date</string>
     <!-- The day a card or an overdraft was approved by the bank; with the agreed

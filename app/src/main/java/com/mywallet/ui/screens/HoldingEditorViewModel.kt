@@ -1342,8 +1342,46 @@ data class HoldingEditorState(
      * What stays is everything about what is owed — the balance, every payment
      * recorded against it, a lump sum off it, and more lent or borrowed on the
      * same arrangement. Those are how money between people actually moves.
+     *
+     * **Unless the two of them agreed to spread it.** Plenty of money between
+     * people is handed back a bit at a time — a colleague paying back a phone
+     * over six months, a brother clearing a loan by Dashain in four goes — and
+     * that arrangement had nowhere to live: the length could be given but never
+     * a rhythm, so the app quoted one lump at the end and no schedule at all.
+     * Saying how often turns it into an ordinary instalment plan, and the whole
+     * of the machinery a bank's loan uses works on it unchanged, interest or no
+     * interest. See [personSpreadsPayments], which is the answer being given,
+     * and `LoanMath.emi`, which divides the principal by the number of payments
+     * when there is no rate to compound.
      */
-    val paysInOneGo: Boolean get() = isLoan && choice.group == HoldingGroup.PERSON
+    val paysInOneGo: Boolean
+        get() = isLoan && choice.group == HoldingGroup.PERSON && !personSpreadsPayments
+
+    /**
+     * Whether a person's debt has been given a rhythm as well as a length.
+     *
+     * The rhythm box is **blank** on this shape until somebody types in it — see
+     * where the form is built — so having anything in it *is* the answer. Both
+     * halves are needed: a rhythm with no length says how often but not how many
+     * times, and neither on its own builds a schedule.
+     *
+     * "At the end" is not one: a gap as long as the debt is one payment on one
+     * day, which is the arrangement this started as.
+     */
+    val personSpreadsPayments: Boolean
+        get() = isLoan && choice.group == HoldingGroup.PERSON &&
+            (termInMonths ?: 0) > 0 && payEveryText.isNotBlank() && !paysAtEnd
+
+    /**
+     * Whether to ask how often this debt is paid at all.
+     *
+     * Wider than [hasInstalments] by exactly one case, and it has to be: a
+     * person's debt only *becomes* an instalment plan by this box being filled,
+     * so a box drawn only once it already was one could never be reached.
+     */
+    val offersPayEvery: Boolean
+        get() = hasInstalments ||
+            (isLoan && choice.group == HoldingGroup.PERSON && (termInMonths ?: 0) > 0)
 
     /** Whether this debt is repaid on a schedule at all. */
     val hasInstalments: Boolean get() = isLoan && !isOverdraft && !paysInOneGo
@@ -1635,6 +1673,13 @@ class HoldingEditorViewModel @Inject constructor(
             // rather than left blank — the same default picking the group used
             // to apply, now that the group is picked before this screen opens.
             disbursedOn = if (newGroup == HoldingGroup.PERSON) clock.today() else null,
+            // **Blank on money between people**, where it is the opt-in rather
+            // than a setting: leaving it empty is the ordinary arrangement — one
+            // amount, one day — and typing into it is how the two of them say
+            // they agreed instalments instead. Every other debt keeps the "1" it
+            // has always opened with, because a bank's loan has a rhythm by
+            // definition and the only question is which. See [paysInOneGo].
+            payEveryText = if (newGroup == HoldingGroup.PERSON) "" else "1",
             // A deposit is nearly always entered on the day it is made, and an
             // empty box that refuses to save is a worse answer than the obvious
             // one — the same reason the day a loan's money arrived starts at
@@ -1968,6 +2013,16 @@ class HoldingEditorViewModel @Inject constructor(
             termInYears = wholeYears,
             payEveryText = when {
                 gapAtEnd -> ""
+                // **Blank on a person's debt that has no instalment on file.**
+                // Every loan stores a gap and it defaults to one month, so the
+                // column cannot tell "every month" from "never asked" — and on
+                // this shape the box being filled is what *makes* it a schedule
+                // (see [personSpreadsPayments]). Read literally, every one-go
+                // debt with a length would reopen claiming monthly instalments
+                // and acquire a schedule the moment it was saved again. The
+                // instalment is the fact that settles it: a debt paid in one go
+                // has none.
+                loan.kind == LoanKind.PERSONAL && loan.emi == null -> ""
                 gapInYears -> (gap / 12).toString()
                 else -> gap.toString()
             },
@@ -3680,7 +3735,27 @@ class HoldingEditorViewModel @Inject constructor(
             // Money between people goes back in one payment on one day, so it
             // gets no instalment and no first-payment date however long it was
             // agreed for — a length there sets the interest, not a schedule.
-            emi = if (current.paysInOneGo) null else formatter.parse(current.emiText),
+            // Unless the two of them agreed a rhythm, which is what makes
+            // [HoldingEditorState.paysInOneGo] false.
+            //
+            // **The quoted figure is sent when none was typed**, and on this
+            // shape it has to be: the box holding a typed instalment belongs to
+            // a bank's loan, where the lender's own rounding must win. Nobody
+            // types one for a debt spread between two people — the app worked it
+            // out, the card on screen has been showing it, and sending null
+            // meant the repository had no instalment, wrote no rule, and saved
+            // a debt with a length and nothing to pay it with.
+            emi = if (current.paysInOneGo) {
+                null
+            } else {
+                formatter.parse(current.emiText)
+                    ?: months?.let {
+                        loans.quotedInstalment(
+                            principal, baseRate(current), it, current.style,
+                            current.monthsPerPayment,
+                        )
+                    }
+            },
             style = current.style,
             emiStartsOn = if (current.paysInOneGo) {
                 null

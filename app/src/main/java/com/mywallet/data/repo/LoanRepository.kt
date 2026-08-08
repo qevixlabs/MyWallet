@@ -1164,10 +1164,22 @@ class LoanRepository @Inject constructor(
         // it was agreed for. A length there sets the interest, not a schedule,
         // and a null instalment beside a due date is what makes the forecast
         // carry the whole balance as a single occurrence.
+        // **Unless one was given**, which is the two of them agreeing to spread
+        // it: a colleague paying back a phone over six months, a brother
+        // clearing a loan in four goes by Dashain. That arrangement had nowhere
+        // to live — the length could be set but never a rhythm — and everything
+        // below works on it unchanged, interest or no interest.
+        //
+        // Given rather than computed, deliberately. Every loan stores a gap and
+        // it defaults to one month, so nothing in the figures can tell "every
+        // month" from "never asked": computing one here would hand a schedule to
+        // every debt anybody ever put a length on. The editor knows which
+        // question was answered and sends the instalment when it was; see
+        // `HoldingEditorState.personSpreadsPayments`.
         val betweenPeople = kind == LoanKind.PERSONAL
         // The instalment: the lender's own figure if given, otherwise ours.
         val instalment = if (betweenPeople) {
-            null
+            emi
         } else {
             emi ?: quotedInstalment(principal, annualRate, termMonths, style, gap)
         }
