@@ -121,6 +121,7 @@ import com.mywallet.ui.components.MovementMark
 import com.mywallet.ui.components.Reveal
 import com.mywallet.ui.components.RouteText
 import com.mywallet.ui.components.SectionHeader
+import com.mywallet.ui.components.SettledField
 import com.mywallet.ui.components.TermUnitChips
 import com.mywallet.ui.components.WalletCard
 import com.mywallet.ui.components.cardBleed
@@ -3530,29 +3531,6 @@ internal fun StatementRowView(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-    }
-}
-
-/**
- * Something the form states rather than asks.
- *
- * The same idea as the kind chips turning into plain text once a holding
- * exists: what a loan was taken at is a fact about the past, and a box you can
- * type in says the opposite. Changing the rate or the term of a running loan
- * does not renegotiate it with the bank — it silently rewrites the arithmetic
- * behind every payment already made — so those answers are given once and shown
- * afterwards. What can still be changed still has a field.
- */
-@Composable
-private fun SettledField(label: String, value: String, modifier: Modifier = Modifier) {
-    Column(modifier = modifier) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(2.dp))
-        Text(text = value, style = MaterialTheme.typography.bodyLarge)
     }
 }
 

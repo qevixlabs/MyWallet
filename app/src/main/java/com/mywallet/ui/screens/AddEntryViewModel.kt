@@ -21,6 +21,7 @@ import com.mywallet.data.settings.SettingsStore
 import com.mywallet.domain.Account
 import com.mywallet.domain.Loan
 import com.mywallet.domain.LoanLedger
+import com.mywallet.domain.Recurrence
 import com.mywallet.domain.Shortlist
 import com.mywallet.ui.nav.Routes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -180,6 +181,17 @@ data class AddEntryUiState(
      * the money came from, said rather than asked.
      */
     val existingDrawdownName: String? = null,
+    /**
+     * Set when the user has changed how often an existing rule falls, and the
+     * app has to ask what that means for the rule's history before writing it.
+     *
+     * Carries the day the rule began, because that is the whole of the choice:
+     * counted from there a rule that has just become yearly falls on past
+     * anniversaries it never fell on, and those become real rows against a real
+     * balance. The question is only ever asked where the two answers differ —
+     * see [AddEntryViewModel.save].
+     */
+    val applyFromRuleStart: LocalDate? = null,
     /**
      * The card or overdraft an existing purchase was spent from, when editing
      * one.
@@ -422,6 +434,30 @@ class AddEntryViewModel @Inject constructor(
 
     /** Set when the entry being edited belongs to a repeating rule. */
     private var editingSeriesId: String? = null
+
+    /**
+     * The day the rule being edited actually began, and how often it fell.
+     *
+     * Kept because saving used to send **the opened occurrence's date** as the
+     * rule's start, whether or not the rule was new. On a monthly rule that is
+     * invisible — every occurrence falls on the same day of the month, so the
+     * anchor lands where it already was — and on a yearly one it decides the
+     * anniversary: correcting the March occurrence made it fall every March, and
+     * correcting the July one made the same edit mean every July. One rule with
+     * two answers, decided by which row the thumb landed on.
+     *
+     * So an existing rule keeps its own start, and the only thing that may move
+     * it is the user answering "apply this change from…" — see [applyFrom].
+     */
+    private var ruleStart: LocalDate? = null
+    private var ruleInterval: RecurrenceInterval? = null
+
+    /**
+     * The answer to "apply this change from…", once given. Null while the
+     * question stands, which is what stops [save] from writing anything until it
+     * has been answered.
+     */
+    private var applyFromStart: Boolean? = null
 
     /**
      * The arrangement's own rule behind the occurrence being edited, held apart
@@ -717,6 +753,10 @@ class AddEntryViewModel @Inject constructor(
             }
             editingSeriesId = seriesId
             recurrence.findSeries(seriesId)?.let { series ->
+                // The rule's own two facts, kept so that saving cannot silently
+                // move them — see [ruleStart].
+                ruleStart = LocalDate.ofEpochDay(series.startOn)
+                ruleInterval = series.interval
                 _state.value = _state.value.copy(
                     repeats = !series.isPaused,
                     hasSeries = true,
@@ -999,6 +1039,55 @@ class AddEntryViewModel @Inject constructor(
         _state.value = _state.value.copy(note = note)
     }
 
+    /**
+     * Where a rule's rhythm is counted from once it is written.
+     *
+     * Three cases and only the first two ever move it. A **new** rule is
+     * anchored on the movement that created it. An **existing** one keeps the day
+     * it began, whatever occurrence the user happened to open — see [ruleStart].
+     * And a rule whose rhythm has just changed is anchored wherever the user said
+     * in answer to "apply this change from…": at its own start, or at its next
+     * payment from today, which is the answer that adds nothing to the past.
+     */
+    private fun anchorFor(
+        current: AddEntryUiState,
+        seriesId: String?,
+        fromStart: Boolean,
+    ): LocalDate {
+        val start = ruleStart
+        if (seriesId == null || start == null) return current.date
+        if (fromStart || current.interval == ruleInterval) return start
+        // Today onward: the first date this rule's *new* rhythm falls on that has
+        // not already been and gone, stepped from the day it began so the day of
+        // the month it has always fallen on is the day it goes on falling on.
+        val today = clock.today()
+        return Recurrence.nextAfter(
+            start = start,
+            interval = current.interval,
+            after = today.minusDays(1),
+            endOn = current.repeatUntil,
+            inBikramSambat = current.usesSelectedCalendar,
+        ) ?: today
+    }
+
+    /**
+     * The user's answer to "apply this change from…", which lets [save] run.
+     *
+     * Remembered rather than passed through, because saving is re-entered from
+     * the top: the answer has to survive that second pass and everything the
+     * first one validated has to be validated again.
+     */
+    fun applyFrom(fromRuleStart: Boolean) {
+        applyFromStart = fromRuleStart
+        _state.value = _state.value.copy(applyFromRuleStart = null)
+        save()
+    }
+
+    /** Cancelling that question leaves the form exactly as it was found. */
+    fun dismissApplyFrom() {
+        _state.value = _state.value.copy(applyFromRuleStart = null)
+    }
+
     fun save() = viewModelScope.launch {
         val current = _state.value
         // Asked of every movement, transfers included: the note is what the row
@@ -1013,6 +1102,21 @@ class AddEntryViewModel @Inject constructor(
         // form insisting on a field it did not ask for when the row was written.
         if (current.note.isBlank() && current.showsNote) {
             _state.value = current.copy(error = EntryError.NOTE)
+            return@launch
+        }
+        // **Nothing is written until the user has said what a changed rhythm
+        // means for the rule's history.** Asked here, before the entry itself is
+        // saved, so that cancelling leaves the form exactly as it was found
+        // rather than half-applied. Only where the two answers differ: the rule
+        // has to exist, its rhythm has to have actually changed, and the box has
+        // to still be ticked. See [AddEntryUiState.applyFromRuleStart].
+        val start = ruleStart
+        if (
+            current.repeats && applyFromStart == null && start != null &&
+            editingSeriesId != null && ruleInterval != null &&
+            current.interval != ruleInterval
+        ) {
+            _state.value = current.copy(applyFromRuleStart = start)
             return@launch
         }
         if (current.isTransfer) {
@@ -1077,13 +1181,14 @@ class AddEntryViewModel @Inject constructor(
                 val savedEntryId = result.id
                 val seriesId = editingSeriesId
                 if (current.repeats) {
+                    val fromStart = applyFromStart == true
                     val newSeriesId = recurrence.saveSeries(
                         id = seriesId,
                         amount = amount,
                         currencyCode = current.currencyCode,
                         direction = current.direction,
                         interval = current.interval,
-                        startOn = current.date,
+                        startOn = anchorFor(current, seriesId, fromStart),
                         endOn = current.repeatUntil,
                         accountId = current.selectedAccountId,
                         note = current.note.trim().takeIf { it.isNotEmpty() },
@@ -1091,6 +1196,7 @@ class AddEntryViewModel @Inject constructor(
                         // suppressed; editing one must not skip a month.
                         firstOccurrenceAlreadyRecorded = seriesId == null,
                         usesSelectedCalendar = current.usesSelectedCalendar,
+                        rebuildFromStart = fromStart,
                     )
                     // Link the entry to its rule so reopening shows it as
                     // recurring instead of silently offering to make another.

@@ -247,6 +247,21 @@ class RecurrenceRepository @Inject constructor(
          * all. [LoanRepository.saveLoan] runs it once the loan is on file.
          */
         materialiseNow: Boolean = true,
+        /**
+         * Whether to rebuild this rule's unconfirmed occurrences from its own
+         * start rather than from today.
+         *
+         * The answer to "apply this change from…", asked whenever the user
+         * changes how often an existing rule falls — see
+         * `AddEntryViewModel.applyFrom`. Both answers are defensible and they
+         * are not the same: counted from the start, a rule that has just become
+         * yearly falls on past anniversaries it never fell on before, and those
+         * dates become real rows that move a balance. Counted from today it
+         * simply begins its new rhythm at the next payment.
+         *
+         * Confirmed rows are never touched either way — they happened.
+         */
+        rebuildFromStart: Boolean = false,
     ): String {
         val now = clock.nowMillis()
         val existing = id?.let { seriesDao.findById(it) }
@@ -306,8 +321,13 @@ class RecurrenceRepository @Inject constructor(
             // the rule's own words rather than anything the user has taken over.
             // Leaving them would keep the very duplicate this fixes: one payment
             // drawn twice inside Baisakh, for as long as the history lasts.
+            // [rebuildFromStart] joins it, for the same reason said the other way
+            // round: a rule whose *rhythm* changed also produced rows on days it
+            // no longer falls on, and the user has said they want it counted from
+            // the beginning.
             val recalendared = existing.recurInBs != recurInBs
-            val from = if (recalendared) minOf(existing.startOn, entity.startOn) else today.toEpochDay()
+            val fromStart = recalendared || rebuildFromStart
+            val from = if (fromStart) minOf(existing.startOn, entity.startOn) else today.toEpochDay()
             seriesDao.discardExpectedFrom(entity.id, from)
             // The watermark has to come back with them.
             //
@@ -316,7 +336,7 @@ class RecurrenceRepository @Inject constructor(
             // was, materialiseDue believes today is already done and never rebuilds
             // it — which is how a loan's instalment vanished from the timeline and
             // from the balance the moment the loan was saved again.
-            val rebuildFrom = if (recalendared) from - 1 else today.minusDays(1).toEpochDay()
+            val rebuildFrom = if (fromStart) from - 1 else today.minusDays(1).toEpochDay()
             if ((existing.materialisedThrough ?: Long.MIN_VALUE) > rebuildFrom) {
                 seriesDao.setMaterialisedThrough(entity.id, rebuildFrom, now)
             }

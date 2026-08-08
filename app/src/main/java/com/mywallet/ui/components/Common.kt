@@ -955,6 +955,34 @@ private val LIST_HEADER_TOP = 8.dp
 /** And one under it, before the paper starts. */
 private val LIST_HEADER_BOTTOM = 8.dp
 
+/**
+ * Something a form states rather than asks.
+ *
+ * The same idea as the kind chips turning into plain text once a holding exists:
+ * what a loan was taken at is a fact about the past, and a box you can type in
+ * says the opposite. Changing the rate or the term of a running loan does not
+ * renegotiate it with the bank — it silently rewrites the arithmetic behind
+ * every payment already made — so those answers are given once and shown
+ * afterwards. What can still be changed still has a field.
+ *
+ * Shared rather than private to the holding's editor, because an instalment
+ * reopened from a statement is the same problem: the figure was worked out by a
+ * schedule, and a box that invites it to be retyped invites the schedule to be
+ * contradicted. See `AddEntryScreen`.
+ */
+@Composable
+fun SettledField(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(text = value, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
 /** The app's card surface. One definition so corners and elevation never drift. */
 @Composable
 fun WalletCard(

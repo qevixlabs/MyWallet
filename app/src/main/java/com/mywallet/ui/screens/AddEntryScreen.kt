@@ -3,6 +3,7 @@ package com.mywallet.ui.screens
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,8 +24,11 @@ import androidx.compose.material.icons.automirrored.outlined.CallReceived
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.SwapHoriz
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -58,6 +62,7 @@ import com.mywallet.data.db.entity.RecurrenceInterval
 import com.mywallet.domain.Account
 import com.mywallet.domain.Shortlist
 import com.mywallet.ui.LocalAppSettings
+import com.mywallet.ui.LocalDateDisplay
 import com.mywallet.ui.LocalMoneyFormatter
 import com.mywallet.ui.components.ConfirmDeleteDialog
 import com.mywallet.ui.components.DatePickerBox
@@ -66,6 +71,7 @@ import com.mywallet.ui.components.LabelDot
 import com.mywallet.ui.components.LaterPaymentFirstDialog
 import com.mywallet.ui.components.Reveal
 import com.mywallet.ui.components.SectionHeader
+import com.mywallet.ui.components.SettledField
 import com.mywallet.ui.components.ShortlistChips
 import com.mywallet.ui.components.editableFieldColors
 import com.mywallet.ui.components.pickableChipColors
@@ -284,7 +290,60 @@ fun AddEntryScreen(
             // after a question already answered. It comes back the moment there
             // is something in it: a purchase on a card is called after what was
             // bought, and that is the user's own word to correct.
-            if (state.showsNote) {
+            // **An instalment is stated, not asked.** Its figure was worked out
+            // by the loan's schedule — what it clears of the principal and what
+            // it pays in interest are that period's answer — so a box inviting
+            // it to be retyped invites the schedule to be contradicted, and the
+            // debt would read a month ahead of itself for the rest of its life.
+            // The same for which account it left and the day it fell: the rule
+            // decided both. So the whole form becomes a quotation, exactly as a
+            // running loan's rate and term are (see [SettledField]).
+            //
+            // **What stays is deleting it**, in the top bar and by a swipe on
+            // any list. That is the honest correction for an instalment that did
+            // not happen: the money is late rather than differently sized, and
+            // the next payment collects it — which the schedule already knows
+            // how to do. See `LoanRepository` on arrears.
+            val quoted = state.isLoanInstalment
+            if (quoted) {
+                // Only where there is something to quote: an instalment the app
+                // wrote itself carries no note, and a label with nothing under it
+                // reads as a field that failed to load.
+                if (state.note.isNotBlank()) {
+                    SettledField(
+                        label = stringResource(R.string.add_note),
+                        value = state.note,
+                    )
+                }
+                // Punctuated like every other figure in the app rather than shown
+                // as the raw text the box was holding: `amountText` is what a
+                // *typist* needs, ungrouped so separators do not fight the
+                // cursor, and there is no typist here.
+                val quotedMoney = money.forCurrency(state.currencyCode)
+                SettledField(
+                    label = stringResource(R.string.add_amount),
+                    value = quotedMoney.parse(state.amountText)
+                        ?.let { quotedMoney.formatCompact(it) }
+                        ?: state.amountText,
+                )
+                SettledField(
+                    label = stringResource(
+                        if (state.direction == Direction.IN) {
+                            R.string.add_account_in
+                        } else {
+                            R.string.add_account
+                        }
+                    ),
+                    value = state.selectedAccount?.name
+                        ?: stringResource(R.string.loan_account_none),
+                )
+                SettledField(
+                    label = stringResource(R.string.add_when),
+                    value = LocalDateDisplay.current.full(state.date),
+                )
+            }
+
+            if (state.showsNote && !quoted) {
             OutlinedTextField(
                 colors = editableFieldColors(),
                 value = state.note,
@@ -302,6 +361,7 @@ fun AddEntryScreen(
             )
             }
 
+            if (!quoted) {
             OutlinedTextField(
                 colors = editableFieldColors(),
                 value = state.amountText,
@@ -330,6 +390,7 @@ fun AddEntryScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth(),
             )
+            }
 
             // What the typed figure comes to in the currency the totals are in.
             // The currency itself is no longer asked: the account this money
@@ -347,7 +408,7 @@ fun AddEntryScreen(
             // in, and under them the holdings it does not — the debts and the
             // goals. One question and one answer across both, which is why
             // tapping in either row clears the other.
-            if (state.showsAccountRow) {
+            if (state.showsAccountRow && !quoted) {
                 Column {
                     SectionHeader(
                         // Money in does not come *from* one of your own
@@ -525,6 +586,7 @@ fun AddEntryScreen(
             }
 
 
+            if (!quoted) {
             Column {
                 SectionHeader(
                     title = stringResource(R.string.add_when),
@@ -541,6 +603,7 @@ fun AddEntryScreen(
                     onPick = viewModel::setDate,
                 )
             }
+            }
 
             // A movement against a debt is a one-off act, not a standing
             // arrangement: an overdraft that refilled itself on a schedule would
@@ -552,6 +615,14 @@ fun AddEntryScreen(
             if (state.isLoanInstalment) {
                 Text(
                     text = stringResource(R.string.entry_loan_instalment_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                // And why none of it can be typed over, said where the fields
+                // would have been. Without this the page is a list of facts with
+                // no Save button and no reason given for either.
+                Text(
+                    text = stringResource(R.string.entry_loan_instalment_locked),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -623,16 +694,83 @@ fun AddEntryScreen(
             }
             }
 
-            Button(
-                onClick = viewModel::save,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-            ) {
-                Text(stringResource(R.string.action_save))
+            // No Save on an instalment: there is nothing on the page it could
+            // write. Removing the button is the honest version of a form that
+             // states rather than asks — a greyed-out Save reads as something the
+            // user has failed to satisfy.
+            if (!quoted) {
+                Button(
+                    onClick = viewModel::save,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                ) {
+                    Text(stringResource(R.string.action_save))
+                }
             }
 
             Spacer(Modifier.height(24.dp))
+        }
+    }
+
+    // What a changed rhythm means for the rule's history, asked before anything
+    // is written — see [AddEntryUiState.applyFromRuleStart]. Two answers, and
+    // the difference is whether payments appear on past dates the rule now falls
+    // on, so each says what it will do rather than only what it is called.
+    state.applyFromRuleStart?.let { ruleStart ->
+        val display = LocalDateDisplay.current
+        AlertDialog(
+            onDismissRequest = viewModel::dismissApplyFrom,
+            title = { Text(stringResource(R.string.repeat_apply_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Text(
+                        text = stringResource(R.string.repeat_apply_body),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    ApplyFromOption(
+                        label = stringResource(R.string.repeat_apply_today),
+                        detail = stringResource(R.string.repeat_apply_today_detail),
+                        onClick = { viewModel.applyFrom(fromRuleStart = false) },
+                    )
+                    ApplyFromOption(
+                        label = stringResource(
+                            R.string.repeat_apply_start,
+                            display.full(ruleStart),
+                        ),
+                        detail = stringResource(R.string.repeat_apply_start_detail),
+                        onClick = { viewModel.applyFrom(fromRuleStart = true) },
+                    )
+                }
+            },
+            // Both answers are buttons in the body, because each needs a line of
+            // its own explaining what it does; a confirm button here would be a
+            // third thing to press for a question already answered by pressing.
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = viewModel::dismissApplyFrom) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            },
+        )
+    }
+}
+
+/** One answer to "apply this change from…": what it is called, and what it does. */
+@Composable
+private fun ApplyFromOption(label: String, detail: String, onClick: () -> Unit) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+    ) {
+        Column(Modifier.fillMaxWidth()) {
+            Text(text = label, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                text = detail,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

@@ -395,6 +395,13 @@
     <string name="date_select_title">Select date</string>
     <!-- Repeats -->
     <string name="repeat_this">Recurring payment</string>
+    <string name="repeat_apply_title">Apply this change from…</string>
+    <string name="repeat_apply_body">You changed how often this repeats. The payments already recorded are kept either way.</string>
+    <string name="repeat_apply_today">Today onward</string>
+    <string name="repeat_apply_today_detail">The new rhythm starts at the next payment. Nothing is added to the past.</string>
+    <string name="repeat_apply_start">The rule\'s start (%1$s)</string>
+    <string name="repeat_apply_start_detail">Counted from the day this rule began, which can add payments on past dates it now falls on.</string>
+    <string name="repeat_apply_confirm">Apply</string>
     <string name="repeat_weekly">Weekly</string>
     <string name="repeat_fortnightly">Fortnightly</string>
     <string name="repeat_monthly">Monthly</string>
@@ -407,6 +414,7 @@
          line only has to say what the answer means. -->
     <string name="repeat_calendar_explain">Every transaction or log follows the %1$s calendar.</string>
     <string name="entry_loan_instalment_note">One payment of a loan. Its schedule lives with the loan itself.</string>
+    <string name="entry_loan_instalment_locked">The amount, the account and the day all belong to the schedule. Delete it if it did not happen — the next payment collects it.</string>
     <!-- One date of an arrangement's own schedule — a premium, a deposit's
          instalment, a goal's contribution. The two ends and the rhythm are the
          arrangement's; the figure and the day stay the user's to correct. -->

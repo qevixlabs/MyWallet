@@ -257,6 +257,13 @@
     <string name="update_install">डाउनलोड गरी इन्स्टल गर्नुहोस्</string>
     <string name="date_select_title">मिति छान्नुहोस्</string>
     <string name="repeat_this">नियमित भुक्तानी</string>
+    <string name="repeat_apply_title">यो परिवर्तन कहाँबाट लागू गर्ने…</string>
+    <string name="repeat_apply_body">तपाईंले यो कति बिच्चमा दोहोरिने हो त्यो बदल्नुभयो। दुवैमा पहिले नै लेखिएका भुक्तानीहरू यथावत् रहन्छन्।</string>
+    <string name="repeat_apply_today">आजदेखि अगाडि</string>
+    <string name="repeat_apply_today_detail">नयाँ लय अर्को भुक्तानीबाट सुरु हुन्छ। विगतमा केही थपिँदैन।</string>
+    <string name="repeat_apply_start">नियमको सुरुदेखि (%1$s)</string>
+    <string name="repeat_apply_start_detail">यो नियम सुरु भएको दिनबाट गनिन्छ, त्यसैले अब पर्ने विगतका दिनहरूमा भुक्तानी थपिन सक्छ।</string>
+    <string name="repeat_apply_confirm">लागू गर्नू</string>
     <string name="repeat_weekly">साप्ताहिक</string>
     <string name="repeat_fortnightly">दुई हप्तामा</string>
     <string name="repeat_monthly">मासिक</string>
@@ -266,6 +273,7 @@
     <string name="repeat_explain">हरेक पटक छुट्टै सुरक्षित हुन्छ र %1$s पात्रो प्रयोग हुन्छ। परिवर्तनले आउन बाँकीलाई मात्र असर गर्छ।</string>
     <string name="repeat_calendar_explain">हरेक कारोबार वा रेकर्ड %1$s पात्रो अनुसार हुन्छ।</string>
     <string name="entry_loan_instalment_note">ऋणको एक किस्ता। यसको तालिका ऋणसँगै छ।</string>
+    <string name="entry_loan_instalment_locked">रकम, खाता र दिन तालिकाले तय गरेको हो। भएकै छैन भने मेटाउनू — अर्को भुक्तानीले त्यो उठाउँछ।</string>
     <string name="entry_plan_payment_note">%1$s को एउटा भुक्तानी। कहाँ जान्छ र कति पटक — ती व्यवस्थासँगै छन्; रकम र मिति यहीँ सच्याउन सकिन्छ।</string>
     <string name="entry_single_occurrence_note">दोहोरिने भुक्तानीको एक मिति। यहाँको परिवर्तनले यही मितिलाई मात्र छुन्छ।</string>
     <string name="projected_balance">ब्यालेन्स %1$s</string>
