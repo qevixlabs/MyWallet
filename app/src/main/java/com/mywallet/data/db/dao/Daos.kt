@@ -879,6 +879,17 @@ interface RecurringSeriesDao {
     @Query("SELECT * FROM recurring_series WHERE deletedAt IS NULL AND is_paused = 0")
     suspend fun activeSeries(): List<RecurringSeriesEntity>
 
+    /**
+     * Every rule that follows whichever calendar the app is set to.
+     *
+     * For the sweep that puts their stored answer back in step with the setting
+     * — see `RecurrenceRepository.recalendarRules`. Paused rules are included on
+     * purpose: a rule resumed after a calendar switch must not resume on the
+     * days the old calendar produced.
+     */
+    @Query("SELECT * FROM recurring_series WHERE deletedAt IS NULL AND uses_selected_calendar = 1")
+    suspend fun optedIntoCalendar(): List<RecurringSeriesEntity>
+
     @Query("SELECT * FROM recurring_series WHERE id = :id AND deletedAt IS NULL")
     suspend fun findById(id: String): RecurringSeriesEntity?
 

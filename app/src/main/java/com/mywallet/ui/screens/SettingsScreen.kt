@@ -235,6 +235,7 @@ class SettingsViewModel @Inject constructor(
         // longer shows.
         loans.recalendarSchedules()
         plans.recalendarPlans()
+        recurrence.recalendarRules()
         interest.postDueInterest()
     }
 

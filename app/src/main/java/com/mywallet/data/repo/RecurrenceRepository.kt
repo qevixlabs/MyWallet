@@ -410,6 +410,72 @@ class RecurrenceRepository @Inject constructor(
         materialiseDue()
     }
 
+    /**
+     * Puts every rule the user writes back in step with the calendar now set.
+     *
+     * The debts have had this since the flag existed (`recalendarSchedules`) and
+     * the policies, goals and deposits since theirs (`recalendarPlans`), and the
+     * rules a user writes by hand — a salary, a subscription — had neither. The
+     * reasoning that left them out was that "for everybody else the effective
+     * answer is Gregorian either way", which is true of a rule that never opted
+     * in and false of one that did: `uses_selected_calendar` is the answer the
+     * user gave, `recur_in_bs` is that answer *joined with the setting*, and it
+     * is the second one every date is generated from.
+     *
+     * So a subscription written while the app was on English months, with the
+     * switch on, went on producing English months after the user moved to
+     * Nepali ones — until something happened to save the rule, at which point
+     * `saveSeries` noticed the mismatch and rebuilt the whole thing underneath
+     * whatever edit they had actually come to make. A stale flag is not a
+     * dormant bug here; it is a rebuild waiting for an unrelated save.
+     *
+     * **It rebuilds from today, not from the rule's start**, and that is the
+     * whole difference between this and [setRecurInBs]. A debt's schedule and a
+     * policy's premiums are arrangements the app *replays* — every past
+     * instalment is a payment that was owed, so restating them on the right days
+     * is restating something real. A rule the user wrote is not replayed: what
+     * it has produced is what happened, and rebuilding it from its start invents
+     * the rest. Measured on a seeded phone, doing it the other way turned 38
+     * movements into 91 and moved one account by रू 14,78,657 — two years of a
+     * subscription nobody had paid, because the Nepali months the rule now steps
+     * in land nowhere near the English ones it had been stepping in.
+     *
+     * So the past keeps the days it was written on — they were right under the
+     * calendar in force then, which is the same reasoning [saveSeries] uses for
+     * a rule whose amount changed — and only today onward is generated again.
+     * Nothing is stored beyond today anyway: everything further out is a
+     * projection computed from the rule as it now stands.
+     *
+     * Runs **after** the other two sweeps, and they cannot disagree: all three
+     * join the same opt-in with the same setting, so anything already restated
+     * is found equal here and skipped.
+     *
+     * Only opted-in rules are visited, so for almost everybody this is a walk
+     * that changes nothing.
+     */
+    suspend fun recalendarRules() {
+        // Asked once rather than once a rule: the opt-in is the half that
+        // varies, and every row this loop sees has already answered it yes.
+        val steps = CalendarSystem.forInterest(
+            optedIn = true, setting = settings.settings.first().calendarSystem,
+        ) == CalendarSystem.BIKRAM_SAMBAT
+        val today = clock.today().toEpochDay()
+        val now = clock.nowMillis()
+        var moved = false
+        for (series in seriesDao.optedIntoCalendar()) {
+            if (series.recurInBs == steps) continue
+            seriesDao.upsert(series.copy(recurInBs = steps, updatedAt = now))
+            seriesDao.discardExpectedFrom(series.id, today)
+            // The watermark back with them, or `materialiseDue` believes today
+            // is already written and the replacements never appear.
+            if ((series.materialisedThrough ?: Long.MIN_VALUE) > today - 1) {
+                seriesDao.setMaterialisedThrough(series.id, today - 1, now)
+            }
+            moved = true
+        }
+        if (moved) materialiseDue()
+    }
+
     suspend fun setPaused(id: String, paused: Boolean) {
         val now = clock.nowMillis()
         seriesDao.setPaused(id, paused, now)

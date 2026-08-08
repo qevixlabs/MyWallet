@@ -381,6 +381,11 @@ class AppViewModel @Inject constructor(
             // skips every debt that never opted in, which is nearly all of them.
             loans.recalendarSchedules()
             plans.recalendarPlans()
+            // And the rules the user writes by hand, which had neither sweep and
+            // go stale exactly the same way — see
+            // [RecurrenceRepository.recalendarRules]. Last of the three, so
+            // anything the two above have already restated is found equal here.
+            recurrence.recalendarRules()
             // And every debt on file says on the page that it arrived. The row
             // used to be written only where the money was said to land in an
             // account, so the month a loan was taken out listed everything it has

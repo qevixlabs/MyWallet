@@ -469,9 +469,14 @@ class LoanRepository @Inject constructor(
      * two disagreeing about the same instalment, which is the exact failure the
      * flag exists to prevent.
      *
-     * Only debts that have opted in are touched. For everybody else the
-     * effective answer is Gregorian either way and there is nothing to restate,
-     * which is what keeps a calendar switch free for almost every user.
+     * Only debts that have opted in are touched, which keeps a calendar switch
+     * free for almost every user. The line that used to stand here — that for
+     * everybody else the effective answer is Gregorian either way — was true
+     * only of a holding that never opted in, and it was read as covering the
+     * *rules a user writes*, which have the same flag and were swept by nothing
+     * at all. See [RecurrenceRepository.recalendarRules], which closes that and
+     * says why it rebuilds from today where this rebuilds from the start.
+     *
      * `saveSeries` rebuilds the unconfirmed occurrences itself when the flag
      * moves — see the note there about a rule that has been re-calendared.
      */
