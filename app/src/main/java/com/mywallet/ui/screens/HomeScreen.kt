@@ -69,6 +69,7 @@ import com.mywallet.ui.loanMovementLabel
 import com.mywallet.ui.loanRowLabel
 import com.mywallet.ui.personWithCurrency
 import com.mywallet.ui.overdraftRoute
+import com.mywallet.ui.theme.RowAmountStyle
 import com.mywallet.ui.theme.RowTitleStyle
 import com.mywallet.ui.theme.DayTotalStyle
 import com.mywallet.ui.theme.MoneyHeadlineStyle
@@ -736,7 +737,7 @@ fun EntryRow(
                 MoneyRoute(
                     lead = sign + original.formatCompact(entry.amount),
                     partner = partner,
-                    style = MoneyRowStyle,
+                    style = RowAmountStyle,
                     color = amountColor,
                 )
             } else {
@@ -746,7 +747,7 @@ fun EntryRow(
                     } else {
                         sign + money.formatCompact(entry.baseAmount)
                     },
-                    style = MoneyRowStyle,
+                    style = RowAmountStyle,
                     color = amountColor,
                 )
             }

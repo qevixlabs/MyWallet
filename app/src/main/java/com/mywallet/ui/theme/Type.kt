@@ -173,9 +173,31 @@ val RowTitleStyle: TextStyle = TextStyle(
     fontFamily = FontFamily.Default,
     fontWeight = FontWeight.Normal,
     fontStyle = FontStyle.Normal,
-    fontSize = 14.sp,
+    fontSize = 15.sp,
     lineHeight = 20.sp,
     letterSpacing = 0.sp,
+)
+
+/**
+ * What a movement came to, beside the name of the movement.
+ *
+ * [MoneyRowStyle] at the title's own size, and that is the whole point: on a
+ * log the two are one sentence — what happened, and what it cost — and a figure
+ * a point larger than the thing it belongs to reads as the row's heading, with
+ * the name demoted to a caption under it. Kept apart from [MoneyRowStyle]
+ * itself, which still sizes the figures on the Accounts page and Home's
+ * breakdown, where the amount genuinely is the heading of its row.
+ *
+ * The weight and the tabular figures come with it: a column of amounts has to
+ * line up on the decimal whatever size it is drawn at.
+ */
+val RowAmountStyle: TextStyle = TextStyle(
+    fontFamily = FontFamily.Default,
+    fontWeight = FontWeight.Medium,
+    fontSize = 15.sp,
+    lineHeight = 20.sp,
+    letterSpacing = (-0.2).sp,
+    fontFeatureSettings = TABULAR,
 )
 
 /**

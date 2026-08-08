@@ -750,7 +750,10 @@ fun MovementMark(
  * a row rather than a control, and at an icon's usual 24 it started to compete
  * with the title beside it.
  */
-private val MOVEMENT_MARK = 20.dp
+// Down from 20.dp. It is a mark rather than an illustration — which way the
+// money ran, read at a glance beside a name — and at 20 it was the heaviest
+// thing on a row whose words are 15sp.
+private val MOVEMENT_MARK = 18.dp
 
 /** The gap between a [MovementMark] and the words it heads. */
 val MOVEMENT_MARK_GAP = 12.dp

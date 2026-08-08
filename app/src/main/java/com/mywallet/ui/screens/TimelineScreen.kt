@@ -92,6 +92,7 @@ import com.mywallet.ui.loanRowLabel
 import com.mywallet.ui.personWithCurrency
 import com.mywallet.ui.outstandingShown
 import com.mywallet.ui.shownAfter
+import com.mywallet.ui.theme.RowAmountStyle
 import com.mywallet.ui.theme.RowTitleStyle
 import com.mywallet.ui.theme.MoneyRowStyle
 import com.mywallet.ui.theme.MoneySmallStyle
@@ -1199,13 +1200,13 @@ fun ProjectedEntryRow(
                 MoneyRoute(
                     lead = sign + lead,
                     partner = crossedPartner,
-                    style = MoneyRowStyle,
+                    style = RowAmountStyle,
                     color = amountColor,
                 )
             } else {
                 MoneyText(
                     formatted = sign + lead,
-                    style = MoneyRowStyle,
+                    style = RowAmountStyle,
                     color = amountColor,
                 )
             }
