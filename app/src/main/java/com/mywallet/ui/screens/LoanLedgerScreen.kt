@@ -1,5 +1,6 @@
 package com.mywallet.ui.screens
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -37,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -50,7 +52,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -576,14 +577,29 @@ private fun LedgerRowView(
     val turnLabel = stringResource(
         if (turned) R.string.loan_working_hide else R.string.loan_working_show
     )
+    // **Which face is measured, not merely which one is visible.**
+    //
+    // Both faces used to be composed at once and hidden by alpha, so the box
+    // measured to the taller of the two and every row on the page carried the
+    // height of working nobody had asked to see. It shows worst on a bank's
+    // loan, whose working is a line longer than a person's, and it was being
+    // paid for by rows that were never turned over at all — the centring below
+    // was an attempt to make that dead space look deliberate.
+    //
+    // Read through [derivedStateOf] so the swap costs one recomposition rather
+    // than one per frame: the angle itself is a draw-phase read (see [turn]),
+    // and only the boolean crossing matters here.
+    //
+    // **It crosses at 90°, which is the one angle where the card is invisible.**
+    // Edge-on there is nothing to see, so exchanging a three-line face for a
+    // four-line one is imperceptible — and [animateContentSize] carries the
+    // rows underneath rather than letting them jump.
+    val showingWorking by remember(turn) { derivedStateOf { turn.value > 90f } }
     Box(
-        // The shorter face sits in the middle of the taller one's height rather
-        // than at the top of it. Left to the default the front of a three-line
-        // row hung from the top of a box measured for the back's four, and every
-        // unturned row on the page read as having a blank line under it.
         contentAlignment = Alignment.Center,
         modifier = modifier
             .fillMaxWidth()
+            .animateContentSize()
             // Says what the tap does to a reader who cannot see the card turn.
             // A row is not a button and takes no role: what it is is a line of a
             // statement, and the label is what happens if you touch it.
@@ -602,23 +618,15 @@ private fun LedgerRowView(
                 cameraDistance = 24f * density
             },
     ) {
-        Box(
-            modifier = Modifier
-                .graphicsLayer { alpha = if (turn.value > 90f) 0f else 1f }
-                .then(if (turned) Modifier.clearAndSetSemantics {} else Modifier)
-        ) {
+        if (showingWorking) {
+            Box(
+                // Turned back the other way, or the words come out mirrored.
+                modifier = Modifier.graphicsLayer { rotationY = 180f }
+            ) {
+                LedgerRowWorking(row = row, isLent = isLent)
+            }
+        } else {
             LedgerRowFace(row = row, isLent = isLent, kind = kind)
-        }
-        Box(
-            modifier = Modifier
-                .graphicsLayer {
-                    // Turned back the other way, or the words come out mirrored.
-                    rotationY = 180f
-                    alpha = if (turn.value > 90f) 1f else 0f
-                }
-                .then(if (turned) Modifier else Modifier.clearAndSetSemantics {})
-        ) {
-            LedgerRowWorking(row = row, isLent = isLent)
         }
     }
 }
