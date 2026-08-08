@@ -141,7 +141,20 @@ class AccountsViewModel @Inject constructor(
         ) { accounts, loans, adjustState, appSettings ->
             // Debts and loans given are never mixed: one is subtracted from what
             // the user is worth and the other added to it.
-            val open = loans.filterNot { it.isClosed }
+            //
+            // **A settled debt stays on the page.** This used to drop every
+            // closed one, and closing is something the app does *by itself*: the
+            // payment that clears a balance sets the flag. So paying रू 5,005
+            // against a रू 5,000 debt to somebody made the whole holding vanish
+            // from Accounts — and nothing anywhere else drew a closed debt, and
+            // no control reopened one, so it could not be found, corrected or
+            // even deleted afterwards. A holding is something the user made; it
+            // is theirs until they remove it, and reaching zero is a fact about
+            // it rather than permission to take it away.
+            //
+            // It costs the totals nothing: a settled debt owes zero, so it adds
+            // zero to what is owed and zero to what is lent.
+            val open = loans
             val (given, borrowed) = open.partition { it.isLent }
             // A bank's debts are part of what that bank holds; a person's are
             // not, and stay in a section of their own further down.

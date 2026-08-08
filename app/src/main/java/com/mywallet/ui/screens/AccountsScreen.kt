@@ -964,6 +964,11 @@ private fun LoanRow(
                 } ?: loan.disbursedOn
                     ?.takeIf { loan.kind == LoanKind.PERSONAL }
                     ?.let { stringResource(R.string.loan_since_short, dates.dayAndMonth(it)) },
+                // And that there is nothing left on it, which a bare रू 0 on the
+                // right does not say: zero is also what a debt reads before
+                // anything has been drawn on it. Last in the line, because it is
+                // the one thing here that is about the debt being *over*.
+                stringResource(R.string.loan_settled_short).takeIf { loan.isClosed },
             ).joinToString(" · ")
             if (detail.isNotEmpty()) {
                 Text(

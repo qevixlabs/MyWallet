@@ -3234,8 +3234,19 @@ class HoldingEditorViewModel @Inject constructor(
         }
         val outcome = loans.previewPrepayment(id, amount, current.prepayDate)
         _state.value = _state.value.copy(
-            prepayShorterMonths = outcome?.shorterTermMonths,
-            prepayLowerEmi = outcome?.sameTermEmi?.let { formatter.formatCompact(it) },
+            // **An outcome of nothing is not an outcome**, and the two buttons
+            // are a *choice* — finish sooner, or pay less each time. A debt with
+            // no schedule has neither to offer, and a payment that clears the
+            // balance leaves nothing to shorten or lower either way, so the pair
+            // came out as "Keep the same payment, finish in 0 months" and "Keep
+            // the same end date, pay रू 0 each time": two buttons asking the
+            // reader to choose between two descriptions of nothing. Withheld
+            // here rather than in the sheet, which already draws a single
+            // *Record payment* when there is no choice to make.
+            prepayShorterMonths = outcome?.shorterTermMonths?.takeIf { it > 0 },
+            prepayLowerEmi = outcome?.sameTermEmi
+                ?.takeIf { it.isPositive }
+                ?.let { formatter.formatCompact(it) },
             prepaySavedByShortening = outcome?.interestSavedByShortening
                 ?.takeIf { it.isPositive }?.let { formatter.formatCompact(it) },
             prepaySavedByLowering = outcome?.interestSavedByLowering

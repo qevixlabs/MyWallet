@@ -448,6 +448,7 @@
     <string name="loan_owed_line_lent">अझै %1$s फिर्ता आउन बाँकी</string>
     <string name="loan_due_short">%1$s सम्म</string>
     <string name="loan_since_short">%1$s देखि</string>
+    <string name="loan_settled_short">चुक्ता</string>
     <string name="loan_ledger_open">हरेक भुक्तानी हेर्नुहोस्</string>
     <string name="loan_ledger_title">एक-एक भुक्तानी</string>
     <string name="loan_ledger_explain">कसरी हिसाब भयो हेर्न किस्तामा ट्याप गर्नुहोस्, वा आफूले लेखेको भुक्तानी सच्याउन त्यसमा। मेट्न बायाँ स्वाइप गर्नुहोस्: ब्यालेन्स पहिलेकै हुनेछ, र छुटेको किस्ता अर्को किस्तामा जोडिन्छ।</string>

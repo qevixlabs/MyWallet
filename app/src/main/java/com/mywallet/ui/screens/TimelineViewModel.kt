@@ -336,8 +336,15 @@ class TimelineViewModel @Inject constructor(
                         loanRows.forEach { if (it.beganIn(window)) add(it.id) }
                     }
                 }
+                // **A settled debt is not dropped**, only an untouched one. The
+                // gate below is already the right question — did this month move
+                // it — and a debt cleared *by* this month's payment is the one it
+                // moved most: dropping it left the month that finished a debt off
+                // as the only month never to mention it. Every other month leaves
+                // it out by the same rule that leaves out any debt nothing
+                // happened to. See `AccountsViewModel` on why closing is the
+                // app's own act rather than the user's.
                 val open = loanRows
-                    .filterNot { it.isClosed }
                     .filter { it.id in touchedLoans }
                     .map { loan ->
                         val due = loan.seriesId?.let { dueBySeries[it] }.orEmpty()

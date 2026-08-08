@@ -633,6 +633,7 @@
     <string name="loan_owed_line_lent">%1$s of it still to come back</string>
     <string name="loan_due_short">due %1$s</string>
     <string name="loan_since_short">since %1$s</string>
+    <string name="loan_settled_short">Settled</string>
     <!-- The ledger: everything that has actually happened to one loan -->
     <string name="loan_ledger_open">See every payment</string>
     <string name="loan_ledger_title">Payment by payment</string>
