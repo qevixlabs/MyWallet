@@ -222,8 +222,16 @@ class LoanLedgerViewModel @Inject constructor(
     private val _state = MutableStateFlow(LoanLedgerState())
     val state: StateFlow<LoanLedgerState> = _state.asStateFlow()
 
+    /**
+     * Rebuilt whenever any movement changes — the same reason the account's
+     * statement is; see `AccountStatementViewModel`. A row here opens the
+     * payment behind it, and a corrected amount came back to a ledger still
+     * quoting the old one, with every balance under it worked out from it.
+     */
     init {
-        viewModelScope.launch { load() }
+        viewModelScope.launch {
+            wallet.observeEntryRevision().collect { load() }
+        }
     }
 
     private suspend fun load() {

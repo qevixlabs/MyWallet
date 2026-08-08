@@ -70,8 +70,24 @@ class AccountStatementViewModel @Inject constructor(
     private val _state = MutableStateFlow(AccountStatementState())
     val state: StateFlow<AccountStatementState> = _state.asStateFlow()
 
+    /**
+     * Rebuilt whenever any movement changes, not once on the way in.
+     *
+     * A row here opens the entry form, and what comes back was a page still
+     * showing the figure that had just been corrected — running balance
+     * included, since every one of them is worked out from the row above. The
+     * same for a row deleted from the form rather than swiped off here. It took
+     * leaving the page and coming back to see what had been saved, which is the
+     * user doing by hand what this now does.
+     *
+     * The whole list is rebuilt rather than patched because it cannot be
+     * patched: one row changing restates every balance below it and the figure
+     * at the top of the page.
+     */
     init {
-        viewModelScope.launch { load() }
+        viewModelScope.launch {
+            wallet.observeEntryRevision().collect { load() }
+        }
     }
 
     private suspend fun load() {

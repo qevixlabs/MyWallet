@@ -33,6 +33,7 @@ import com.mywallet.domain.Shortlist
 import com.mywallet.domain.payableHoldings
 import com.mywallet.di.IoDispatcher
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.conflate
@@ -491,7 +492,22 @@ class WalletRepository @Inject constructor(
      * title worked out here, so the statement names a movement in the same words
      * the timeline does; see `entryTitle`.
      */
-    suspend fun statementFor(accountId: String): List<AccountMovement> {
+    /**
+     * Fires whenever any movement changes, so a page built from a snapshot can
+     * rebuild itself — see [MoneyEntryDao.observeRevision].
+     */
+    fun observeEntryRevision(): Flow<Int> = entryDao.observeRevision()
+
+    suspend fun statementFor(accountId: String): List<AccountMovement> = withContext(io) {
+        statementNow(accountId)
+    }
+
+    /**
+     * On [io], like the debt's ledger beside it: this walks every movement an
+     * account has ever had and runs a balance down the whole of it, and the
+     * list only grows.
+     */
+    private suspend fun statementNow(accountId: String): List<AccountMovement> {
         val account = accountDao.findById(accountId) ?: return emptyList()
         val loans = loanDao.observeAll().first()
         val bySeries = loans.filter { it.seriesId != null }.associateBy { it.seriesId }

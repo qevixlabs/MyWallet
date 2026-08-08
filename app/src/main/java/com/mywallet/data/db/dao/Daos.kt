@@ -489,6 +489,27 @@ interface MoneyEntryDao {
     @Query("SELECT COUNT(*) FROM money_entry WHERE deletedAt IS NULL")
     suspend fun count(): Int
 
+    /**
+     * Fires whenever anything in `money_entry` changes. The number is never read.
+     *
+     * For the pages that are **built once and then read** — an account's
+     * statement, a debt's ledger. Each is a list whose every balance was worked
+     * out from the row above it, so it cannot be patched in place; it is
+     * rebuilt. They used to rebuild only when the page itself removed a row,
+     * which left every edit made anywhere else invisible: tapping a row opens
+     * the entry form, and correcting an amount there came back to a statement
+     * still showing the old one, right down to the running balance. It took
+     * leaving the page and returning to see what had actually been saved.
+     *
+     * **The count is not the point and must not be made distinct.** Room re-runs
+     * this on any write to the table and emits whatever it gets, which is what
+     * catches an *amount* being corrected — the row count does not move for
+     * that, and a `distinctUntilChanged` here would swallow exactly the case
+     * this exists for.
+     */
+    @Query("SELECT COUNT(*) FROM money_entry")
+    fun observeRevision(): Flow<Int>
+
     @Query("SELECT * FROM money_entry")
     suspend fun dumpAll(): List<MoneyEntryEntity>
 }
