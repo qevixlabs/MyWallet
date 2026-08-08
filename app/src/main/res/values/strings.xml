@@ -44,6 +44,7 @@
     <string name="add_money_in">Money in</string>
     <string name="add_title_new">Add money</string>
     <string name="add_title_edit">Edit entry</string>
+    <string name="add_title_instalment">Loan payment</string>
     <string name="add_amount">How much?</string>
     <string name="add_when">When?</string>
     <!-- The note is what a movement is called. It stands where the label used to:
@@ -396,11 +397,11 @@
     <!-- Repeats -->
     <string name="repeat_this">Recurring payment</string>
     <string name="repeat_apply_title">Apply this change from…</string>
-    <string name="repeat_apply_body">You changed how often this repeats. The payments already recorded are kept either way.</string>
+    <string name="repeat_apply_body">You changed this repeating payment. What happens to the ones already recorded is up to you.</string>
     <string name="repeat_apply_today">Today onward</string>
-    <string name="repeat_apply_today_detail">The new rhythm starts at the next payment. Nothing is added to the past.</string>
+    <string name="repeat_apply_today_detail">Only payments from here on. Everything already recorded stays exactly as it is.</string>
     <string name="repeat_apply_start">The rule\'s start (%1$s)</string>
-    <string name="repeat_apply_start_detail">Counted from the day this rule began, which can add payments on past dates it now falls on.</string>
+    <string name="repeat_apply_start_detail">Payments already recorded are restated to the new amount, and past dates it now falls on are added.</string>
     <string name="repeat_apply_confirm">Apply</string>
     <string name="repeat_weekly">Weekly</string>
     <string name="repeat_fortnightly">Fortnightly</string>
@@ -408,7 +409,7 @@
     <string name="repeat_quarterly">Every 3 months</string>
     <string name="repeat_half_yearly">Every 6 months</string>
     <string name="repeat_yearly">Yearly</string>
-    <string name="repeat_explain">Every occurrence is saved separately and uses the %1$s calendar. Changes affect future ones only.</string>
+    <string name="repeat_explain">Every occurrence is saved separately and uses the %1$s calendar. Change the amount or how often it repeats and you are asked what it means for the ones already recorded.</string>
     <!-- Under the "Uses default calendar" switch on the money form. Short,
          because the switch above it has already asked the question and the
          line only has to say what the answer means. -->

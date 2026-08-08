@@ -26,6 +26,7 @@
     <string name="add_money_in">आम्दानी</string>
     <string name="add_title_new">रकम थप्नुहोस्</string>
     <string name="add_title_edit">प्रविष्टि सम्पादन</string>
+    <string name="add_title_instalment">ऋणको भुक्तानी</string>
     <string name="add_amount">कति?</string>
     <string name="add_when">कहिले?</string>
     <string name="add_note">टिप्पणी</string>
@@ -258,11 +259,11 @@
     <string name="date_select_title">मिति छान्नुहोस्</string>
     <string name="repeat_this">नियमित भुक्तानी</string>
     <string name="repeat_apply_title">यो परिवर्तन कहाँबाट लागू गर्ने…</string>
-    <string name="repeat_apply_body">तपाईंले यो कति बिच्चमा दोहोरिने हो त्यो बदल्नुभयो। दुवैमा पहिले नै लेखिएका भुक्तानीहरू यथावत् रहन्छन्।</string>
+    <string name="repeat_apply_body">तपाईंले यो दोहोरिने भुक्तानी बदल्नुभयो। पहिले नै लेखिएकाहरूको के गर्ने, त्यो तपाईंकै हातमा छ।</string>
     <string name="repeat_apply_today">आजदेखि अगाडि</string>
-    <string name="repeat_apply_today_detail">नयाँ लय अर्को भुक्तानीबाट सुरु हुन्छ। विगतमा केही थपिँदैन।</string>
+    <string name="repeat_apply_today_detail">यहाँबाट पछिका भुक्तानी मात्र। पहिले लेखिएका सबै जस्ताको तस्तै रहन्छन्।</string>
     <string name="repeat_apply_start">नियमको सुरुदेखि (%1$s)</string>
-    <string name="repeat_apply_start_detail">यो नियम सुरु भएको दिनबाट गनिन्छ, त्यसैले अब पर्ने विगतका दिनहरूमा भुक्तानी थपिन सक्छ।</string>
+    <string name="repeat_apply_start_detail">पहिले लेखिएका भुक्तानी नयाँ रकममा फेरिन्छन्, र अब पर्ने विगतका मितिहरू थपिन्छन्।</string>
     <string name="repeat_apply_confirm">लागू गर्नू</string>
     <string name="repeat_weekly">साप्ताहिक</string>
     <string name="repeat_fortnightly">दुई हप्तामा</string>
@@ -270,7 +271,7 @@
     <string name="repeat_quarterly">हरेक ३ महिना</string>
     <string name="repeat_half_yearly">हरेक ६ महिना</string>
     <string name="repeat_yearly">वार्षिक</string>
-    <string name="repeat_explain">हरेक पटक छुट्टै सुरक्षित हुन्छ र %1$s पात्रो प्रयोग हुन्छ। परिवर्तनले आउन बाँकीलाई मात्र असर गर्छ।</string>
+    <string name="repeat_explain">हरेक पटक छुट्टै सुरक्षित हुन्छ र %1$s पात्रो प्रयोग हुन्छ। रकम वा कति बिच्चमा दोहोरिने हो बदल्नुभयो भने पहिले लेखिएकाहरूको के गर्ने भनी सोधिन्छ।</string>
     <string name="repeat_calendar_explain">हरेक कारोबार वा रेकर्ड %1$s पात्रो अनुसार हुन्छ।</string>
     <string name="entry_loan_instalment_note">ऋणको एक किस्ता। यसको तालिका ऋणसँगै छ।</string>
     <string name="entry_loan_instalment_locked">रकम, खाता र दिन तालिकाले तय गरेको हो। भएकै छैन भने मेटाउनू — अर्को भुक्तानीले त्यो उठाउँछ।</string>

@@ -934,6 +934,39 @@ interface RecurringSeriesDao {
     )
     suspend fun discardExpectedFrom(seriesId: String, fromDay: Long)
 
+    /**
+     * Restates what every payment this rule has already produced was for.
+     *
+     * The other half of "apply this change from… the rule's start". Discarding
+     * and rebuilding reaches only the unconfirmed rows; a confirmed one is never
+     * regenerated, so without this a rule whose amount changed left every
+     * payment already recorded at the old figure and the choice did nothing
+     * visible for the case a user is most likely to pick it for.
+     *
+     * **Only `CONFIRMED`**, because the rest are about to be written again from
+     * the rule anyway, and only where the user has asked for it: this rewrites
+     * history, including any single occurrence they had corrected by hand, which
+     * is why it is behind a dialog that says so in those words.
+     *
+     * The base figure is restated at **each row's own locked rate** rather than
+     * today's — a $10 charge entered in March keeps March's rate forever, and
+     * re-converting here would quietly re-value a closed month.
+     *
+     * Transfers are excluded by the caller, not here: they write two rows an
+     * occurrence and the pair need not hold the same figure once a currency
+     * conversion sits between them.
+     */
+    @Query(
+        """
+        UPDATE money_entry
+        SET amount_minor = :amountMinor,
+            base_amount_minor = CAST(ROUND(:amountMinor * rate_to_base) AS INTEGER),
+            updatedAt = :now
+        WHERE series_id = :seriesId AND deletedAt IS NULL AND status = 'CONFIRMED'
+        """
+    )
+    suspend fun restateConfirmed(seriesId: String, amountMinor: Long, now: Long)
+
     @Query("SELECT * FROM recurring_series")
     suspend fun dumpAll(): List<RecurringSeriesEntity>
 

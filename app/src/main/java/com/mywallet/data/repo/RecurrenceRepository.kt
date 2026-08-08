@@ -326,7 +326,19 @@ class RecurrenceRepository @Inject constructor(
             // no longer falls on, and the user has said they want it counted from
             // the beginning.
             val recalendared = existing.recurInBs != recurInBs
-            val fromStart = recalendared || rebuildFromStart
+            // **Rebuilding from the start is only ever about the rhythm.**
+            // Answering "from the rule's start" to a changed *amount* asks for
+            // the payments already recorded to be restated, which is the line
+            // below — not for the rule to be replayed over its whole life. Run
+            // together they were the same switch, and a subscription whose price
+            // changed came back with seventeen occurrences nobody had ever paid:
+            // the rule steps in Nepali months, so replaying it from a Gregorian
+            // anchor two years back landed one every thirty-odd days, each of
+            // them money out of a real balance.
+            val rhythmMoved = existing.interval != entity.interval ||
+                existing.intervalMonths != entity.intervalMonths ||
+                existing.startOn != entity.startOn
+            val fromStart = recalendared || (rebuildFromStart && rhythmMoved)
             val from = if (fromStart) minOf(existing.startOn, entity.startOn) else today.toEpochDay()
             seriesDao.discardExpectedFrom(entity.id, from)
             // The watermark has to come back with them.
@@ -336,6 +348,19 @@ class RecurrenceRepository @Inject constructor(
             // was, materialiseDue believes today is already done and never rebuilds
             // it — which is how a loan's instalment vanished from the timeline and
             // from the balance the moment the loan was saved again.
+            // And what the payments already recorded were *for*. The rebuild
+            // above never reaches them — a confirmed row is not regenerated — so
+            // without this, counting from the start did nothing at all for the
+            // change a user is most likely to be making: the amount. Excluded
+            // for a transfer, whose two halves need not carry the same figure
+            // once a conversion sits between them.
+            // Asked of [rebuildFromStart] rather than of [fromStart]: restating
+            // what the payments already made were for is the whole of what the
+            // answer means when only the amount moved, and it must not wait on
+            // the rhythm having moved too.
+            if (rebuildFromStart && entity.transferToAccountId == null) {
+                seriesDao.restateConfirmed(entity.id, amount.minor, now)
+            }
             val rebuildFrom = if (fromStart) from - 1 else today.minusDays(1).toEpochDay()
             if ((existing.materialisedThrough ?: Long.MIN_VALUE) > rebuildFrom) {
                 seriesDao.setMaterialisedThrough(entity.id, rebuildFrom, now)

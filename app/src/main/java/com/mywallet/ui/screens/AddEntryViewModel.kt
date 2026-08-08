@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.mywallet.R
 import com.mywallet.core.date.CalendarSystem
 import com.mywallet.core.money.CurrencyOption
+import com.mywallet.core.money.Money
 import com.mywallet.core.money.MoneyFormatter
 import com.mywallet.data.db.entity.Direction
 import com.mywallet.data.db.entity.RecurrenceInterval
@@ -453,6 +454,14 @@ class AddEntryViewModel @Inject constructor(
     private var ruleInterval: RecurrenceInterval? = null
 
     /**
+     * What the rule paid before this edit, so a changed figure can be told from
+     * an unchanged one. Asking is only worth doing where something actually
+     * moved — a user who opened the form to correct a note should not be
+     * interrogated about history that is not going to change.
+     */
+    private var ruleAmountMinor: Long? = null
+
+    /**
      * The answer to "apply this change from…", once given. Null while the
      * question stands, which is what stops [save] from writing anything until it
      * has been answered.
@@ -757,6 +766,7 @@ class AddEntryViewModel @Inject constructor(
                 // move them — see [ruleStart].
                 ruleStart = LocalDate.ofEpochDay(series.startOn)
                 ruleInterval = series.interval
+                ruleAmountMinor = series.amountMinor
                 _state.value = _state.value.copy(
                     repeats = !series.isPaused,
                     hasSeries = true,
@@ -1040,6 +1050,17 @@ class AddEntryViewModel @Inject constructor(
     }
 
     /**
+     * The figure in the box, read in the entry's **own** currency.
+     *
+     * A JPY amount has no decimals and parsing it with the display currency's
+     * rules would be off by a hundred, which is why every reader of this box
+     * goes through the entry's own formatter.
+     */
+    private fun amountFor(current: AddEntryUiState): Money? =
+        MoneyFormatter(CurrencyOption.byCode(current.currencyCode), grouping = settingsStore.grouping)
+            .parse(current.amountText)
+
+    /**
      * Where a rule's rhythm is counted from once it is written.
      *
      * Three cases and only the first two ever move it. A **new** rule is
@@ -1104,17 +1125,29 @@ class AddEntryViewModel @Inject constructor(
             _state.value = current.copy(error = EntryError.NOTE)
             return@launch
         }
-        // **Nothing is written until the user has said what a changed rhythm
-        // means for the rule's history.** Asked here, before the entry itself is
-        // saved, so that cancelling leaves the form exactly as it was found
-        // rather than half-applied. Only where the two answers differ: the rule
-        // has to exist, its rhythm has to have actually changed, and the box has
-        // to still be ticked. See [AddEntryUiState.applyFromRuleStart].
+        // **Nothing is written until the user has said what the change means for
+        // the rule's history.** Asked here, before the entry itself is saved, so
+        // that cancelling leaves the form exactly as it was found rather than
+        // half-applied.
+        //
+        // Asked for a changed **rhythm** and a changed **amount** alike, because
+        // both leave the payments already recorded describing an arrangement
+        // that is no longer the one on file — the rhythm puts them on days the
+        // rule no longer falls on, and the amount leaves every one of them at
+        // the old figure. Not asked for anything else: somebody correcting a
+        // note should not be interrogated about history that will not move.
         val start = ruleStart
         if (
             current.repeats && applyFromStart == null && start != null &&
-            editingSeriesId != null && ruleInterval != null &&
-            current.interval != ruleInterval
+            // A transfer writes two rows an occurrence and the pair need not
+            // hold the same figure once a conversion sits between them, so
+            // restating them is refused — and a question whose answer would
+            // change nothing is not worth asking.
+            editingSeriesId != null && ruleInterval != null && !current.isTransfer &&
+            (
+                current.interval != ruleInterval ||
+                    ruleAmountMinor?.let { it != amountFor(current)?.minor } == true
+                )
         ) {
             _state.value = current.copy(applyFromRuleStart = start)
             return@launch

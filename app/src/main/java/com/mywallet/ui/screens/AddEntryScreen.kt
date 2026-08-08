@@ -151,8 +151,18 @@ fun AddEntryScreen(
             TopAppBar(
                 title = {
                     Text(
+                        // "Edit entry" everywhere a form can be typed in — see
+                        // *One title for a form the user arrived at*. An
+                        // instalment is the one page here that cannot: it states
+                        // its figures and has no Save, so the heading names what
+                        // is being read instead of promising an edit the page
+                        // will not accept.
                         text = stringResource(
-                            if (state.isEditing) R.string.add_title_edit else R.string.add_title_new
+                            when {
+                                state.isLoanInstalment -> R.string.add_title_instalment
+                                state.isEditing -> R.string.add_title_edit
+                                else -> R.string.add_title_new
+                            }
                         ),
                         style = TitleStyle,
                     )
