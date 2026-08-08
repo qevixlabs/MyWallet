@@ -23,6 +23,7 @@ import com.mywallet.domain.Loan
 import com.mywallet.domain.MoneyEntry
 import com.mywallet.domain.ProjectedDay
 import com.mywallet.domain.ProjectedEntry
+import com.mywallet.di.IoDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +32,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -132,6 +135,7 @@ class TimelineViewModel @Inject constructor(
     private val settings: SettingsStore,
     private val months: MonthSelection,
     private val clock: Clock,
+    @IoDispatcher private val io: CoroutineDispatcher,
 ) : ViewModel() {
 
     private val _filter = MutableStateFlow(TimelineFilter.ALL)
@@ -500,7 +504,15 @@ class TimelineViewModel @Inject constructor(
                     isLoading = false,
                 )
             }
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TimelineUiState())
+        }
+            // The transform above is not a mapping, it is the month being
+            // worked out: it projects every rule forward, asks the interest what
+            // it will post and the deposits when they mature, then walks the lot
+            // into days, accounts and debts. All of it ran on the thread that
+            // draws. See `AppViewModel` on the launch sweep, which was the same
+            // mistake one layer up.
+            .flowOn(io)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TimelineUiState())
 
     private fun windowFor(display: DateDisplay, offset: Int): DateWindow {
         var window = display.monthWindow(clock.today())

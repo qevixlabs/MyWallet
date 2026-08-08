@@ -15,12 +15,15 @@ import com.mywallet.data.repo.WalletRepository
 import com.mywallet.data.settings.SettingsStore
 import com.mywallet.domain.AccountWithBalance
 import com.mywallet.domain.Loan
+import com.mywallet.di.IoDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -128,6 +131,7 @@ class AccountsViewModel @Inject constructor(
     private val settingsStore: SettingsStore,
     private val exchangeRates: ExchangeRateRepository,
     private val clock: Clock,
+    @IoDispatcher private val io: CoroutineDispatcher,
 ) : ViewModel() {
 
     private val adjusting = MutableStateFlow<AdjustState?>(null)
@@ -293,7 +297,12 @@ class AccountsViewModel @Inject constructor(
                 today = clock.today(),
                 isLoading = false,
             )
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AccountsUiState())
+        }
+            // Grouping every holding under its bank, sorting them and summing
+            // three totals across them — off the drawing thread with the reads
+            // that feed it.
+            .flowOn(io)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AccountsUiState())
 
     init {
         viewModelScope.launch {

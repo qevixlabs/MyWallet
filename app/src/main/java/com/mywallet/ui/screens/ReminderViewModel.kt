@@ -9,6 +9,7 @@ import com.mywallet.data.repo.RecurrenceRepository
 import com.mywallet.data.repo.ReminderRepository
 import com.mywallet.data.repo.Reminders
 import com.mywallet.data.repo.WalletRepository
+import com.mywallet.di.IoDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +19,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -63,6 +66,7 @@ class ReminderViewModel @Inject constructor(
     private val loans: LoanRepository,
     private val recurrence: RecurrenceRepository,
     private val clock: Clock,
+    @IoDispatcher private val io: CoroutineDispatcher,
 ) : ViewModel() {
 
     /**
@@ -123,6 +127,7 @@ class ReminderViewModel @Inject constructor(
                     )
                 }
         }
+        .flowOn(io)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ReminderUiState())
 
     /**
