@@ -879,29 +879,29 @@ private fun BalanceRow(
  * The date's own figure leads, big enough to scroll to — and in whichever
  * calendar is being read, so a Nepali page is counted in Nepali days and a
  * Gregorian one in Gregorian days. The words beside it are what the figure alone
- * cannot say: the weekday, where that is worth a line — see [weekday] — and then
- * one line more, which is the English date on a Nepali page, the way a printed
- * patro puts it in the corner of a cell, and the month on a Gregorian one.
+ * cannot say: the weekday, and then one line more, which is the English date on
+ * a Nepali page, the way a printed patro puts it in the corner of a cell, and
+ * the month on a Gregorian one.
  *
  * Written once and used by both headings on this page — a day that has happened
  * and a day still to come. They are the same list read in two directions and
  * cannot be lettered two ways.
+ *
+ * **Every day names its day, the ones still to come included.** A future heading
+ * used to print the date alone, on the argument that it is a date to arrive at
+ * rather than a day to remember — and what that produced was one page with two
+ * kinds of heading on it: scrolling from last week into next week, the day names
+ * simply stopped, and the reader who had been reading "which Saturday was that?"
+ * out of the margin had nothing to read it out of. Which weekday a payment falls
+ * on is *more* use ahead of time than behind it — a rent day landing on a
+ * Saturday is a bank closed — and it is the same question in both calendars, so
+ * both answer it. The extra line makes a future day exactly as tall as today,
+ * which is what those two rows were always meant to be.
  */
 @Composable
 private fun DayHeading(
     date: LocalDate,
     modifier: Modifier = Modifier,
-    /**
-     * Whether the day it fell on is worth a line of its own.
-     *
-     * Yes on a day that has happened, where it is the one thing about the date
-     * a reader looking back actually uses — "what did that Saturday cost me?".
-     * No on a day still to come, which never carried one: a heading there is a
-     * date to arrive at rather than a day to remember, and the line would be a
-     * second row of words on a heading that had one, making every future day a
-     * notch taller than it is today.
-     */
-    weekday: Boolean = true,
 ) {
     val dates = LocalDateDisplay.current
     // The one line of words that is not the weekday.
@@ -919,8 +919,8 @@ private fun DayHeading(
     val rest = dates.secondaryShort(date) ?: dates.monthName(date)
     DayLabel(
         day = dates.dayNumber(date),
-        primary = if (weekday) dates.weekdayName(date) else rest,
-        secondary = rest.takeIf { weekday },
+        primary = dates.weekdayName(date),
+        secondary = rest,
         modifier = modifier,
     )
 }
@@ -953,12 +953,13 @@ private fun ProjectedDayHeader(
                 .padding(horizontal = LIST_PANEL_ROW_INSET, vertical = 10.dp),
         ) {
             // The same day heading the days behind us wear, down to the figure
-            // in the margin. A day still to come is a day: set in `titleSmall`
-            // it was the one heading on the page in a different voice, and an
-            // EMI's date read louder than the date of the rent that has already
-            // gone out. Without the weekday, which it has never carried — see
+            // in the margin and the weekday beside it. A day still to come is a
+            // day: set in `titleSmall` it was the one heading on the page in a
+            // different voice, and an EMI's date read louder than the date of
+            // the rent that has already gone out; printed without its day name
+            // it was the one heading on the page missing a line — see
             // [DayHeading].
-            DayHeading(date = date, weekday = false, modifier = Modifier.weight(1f))
+            DayHeading(date = date, modifier = Modifier.weight(1f))
             Text(
                 text = balanceText,
                 style = MoneySmallStyle,
