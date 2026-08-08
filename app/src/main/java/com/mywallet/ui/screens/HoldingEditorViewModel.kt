@@ -1161,13 +1161,26 @@ data class HoldingEditorState(
      * third answer to a question with two. It stays selectable on a loan already
      * running that way, so an existing schedule is never rewritten behind the
      * user's back.
+     *
+     * **Interest-only needs interest**, and without a rate it is not a shape at
+     * all: what it means is that each payment is the period's interest and the
+     * principal waits, so at no rate it asks for nothing and clears nothing —
+     * `LoanMath.instalment` returns null for exactly that reason. It became
+     * reachable when money between people was offered instalments, most of which
+     * carries no rate at all, and a chip that quotes रू 0 a month for ever is
+     * worse than no chip. Withheld until a rate is given, which on every form
+     * that draws these is a box above them.
      */
     val styles: List<InstalmentStyle>
-        get() = if (isPrincipalOnly) {
-            InstalmentStyle.entries
-        } else {
-            listOf(InstalmentStyle.LEVEL_EMI, InstalmentStyle.INTEREST_ONLY)
+        get() = when {
+            isPrincipalOnly -> InstalmentStyle.entries
+            hasRate -> listOf(InstalmentStyle.LEVEL_EMI, InstalmentStyle.INTEREST_ONLY)
+            else -> listOf(InstalmentStyle.LEVEL_EMI)
         }
+
+    /** Whether a rate has actually been given, as a figure that charges something. */
+    private val hasRate: Boolean
+        get() = (rateText.trim().toDoubleOrNull() ?: 0.0) > 0.0
 
     /**
      * Months between instalments, as the arithmetic wants it.
@@ -2762,6 +2775,14 @@ class HoldingEditorViewModel @Inject constructor(
                     ?: clock.today()
             },
         )
+        // A shape that is no longer on offer cannot stay selected. Clearing the
+        // rate withdraws interest-only — see [HoldingEditorState.styles] — and a
+        // selection left behind would save a schedule whose every payment is the
+        // interest on nothing, quietly and with no chip on screen saying so.
+        val offered = _state.value.styles
+        if (_state.value.style !in offered) {
+            _state.value = _state.value.copy(style = InstalmentStyle.LEVEL_EMI)
+        }
         recompute()
     }
 

@@ -2926,7 +2926,14 @@ private fun LoanFields(
         // costing more than it does, and every figure on this form is built from
         // it. Loans already carrying a lender's figure keep it: it is read on
         // load and written back untouched.
-        if (!state.isEditing) {
+        // And only where there is something to choose between. Without a rate
+        // the only shape left is the ordinary one — see
+        // [HoldingEditorState.styles] — and a heading asking how a debt is
+        // repaid over a single chip that cannot be unpicked is a question with
+        // one answer, followed by two sentences explaining a shape that is not
+        // on offer. Money between people arrives here most often, since most of
+        // it carries no interest at all.
+        if (!state.isEditing && state.styles.size > 1) {
         Column {
             SectionHeader(title = stringResource(R.string.loan_style), divider = true)
             Spacer(Modifier.height(10.dp))
