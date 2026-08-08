@@ -11,11 +11,15 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.mywallet.core.date.CalendarSystem
 import com.mywallet.core.money.DigitGrouping
+import com.mywallet.di.ApplicationScope
 import com.mywallet.domain.SavingsInterest
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.shareIn
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -124,6 +128,7 @@ const val DEFAULT_NOTIFY_MINUTES: Int = 9 * 60
 @Singleton
 class SettingsStore @Inject constructor(
     @ApplicationContext private val context: Context,
+    @ApplicationScope private val scope: CoroutineScope,
 ) {
     private object Keys {
         val CURRENCY = stringPreferencesKey("currency_code")
@@ -163,6 +168,23 @@ class SettingsStore @Inject constructor(
     var grouping: DigitGrouping = DigitGrouping.SOUTH_ASIAN
         private set
 
+    /**
+     * The preferences in force, as one object.
+     *
+     * **Hot, and it has to be.** This is asked far more often than it is
+     * answered: the display currency is read once per debt while a list of them
+     * is built, and the calendar twice more for each — so a screen with a dozen
+     * holdings on it opened the preferences file dozens of times to be told the
+     * same thing, once per row. Shared with a replay of one, every reader after
+     * the first is handed the answer already in hand, and the mapping below runs
+     * once per change rather than once per asker.
+     *
+     * Eager rather than [SharingStarted.WhileSubscribed], because the first
+     * reader is usually a `first()` inside a list being built and would
+     * otherwise pay for the file read on a screen that is already drawing.
+     * Nothing about what it emits changes: DataStore still owns the value, this
+     * still emits on every edit, and a collector still sees them in order.
+     */
     val settings: Flow<AppSettings> = context.dataStore.data.map { prefs ->
         AppSettings(
             currencyCode = prefs[Keys.CURRENCY] ?: "NPR",
@@ -179,7 +201,7 @@ class SettingsStore @Inject constructor(
             notifyReminders = prefs[Keys.NOTIFY_REMINDERS] ?: false,
             notifyAtMinutes = prefs[Keys.NOTIFY_AT] ?: DEFAULT_NOTIFY_MINUTES,
         )
-    }
+    }.shareIn(scope, SharingStarted.Eagerly, replay = 1)
 
     suspend fun setCurrency(code: String) = edit { it[Keys.CURRENCY] = code }
 

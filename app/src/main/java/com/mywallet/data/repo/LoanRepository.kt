@@ -35,9 +35,15 @@ import com.mywallet.domain.PrepaymentOutcome
 import com.mywallet.domain.RateSchedule
 import com.mywallet.domain.Recurrence
 import com.mywallet.domain.accrualFor
+import com.mywallet.di.IoDispatcher
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 import java.util.UUID
@@ -135,13 +141,22 @@ class LoanRepository @Inject constructor(
     private val exchangeRates: ExchangeRateRepository,
     private val settings: SettingsStore,
     private val clock: Clock,
+    @IoDispatcher private val io: CoroutineDispatcher,
 ) {
 
     fun observeLoans(): Flow<List<LoanEntity>> = loanDao.observeAll()
 
-    /** A single loan with its outstanding balance, for the editor. */
-    suspend fun findLoan(id: String): Loan? =
+    /**
+     * A single loan with its outstanding balance, for the editor.
+     *
+     * On [io], like every read below that fills a screen. A view model asks from
+     * `viewModelScope`, which is the main thread, and answering one debt is a
+     * dozen queries with an amortisation walked between them — so the editor
+     * opened by doing all of it on the thread that had to draw it.
+     */
+    suspend fun findLoan(id: String): Loan? = withContext(io) {
         loanDao.findById(id)?.let { it.toDomain(outstandingOf(it)) }
+    }
 
     /**
      * What is still owed on [entity].
@@ -177,8 +192,19 @@ class LoanRepository @Inject constructor(
      *  - **A schedule needs only the movements it cannot see** put back, since it
      *    works out the rest from the rule's own dates.
      */
-    private suspend fun outstandingOf(entity: LoanEntity, asOf: LocalDate? = null): Money {
-        val onFile = onCurrentBasis(entity, asOf)
+    /**
+     * @param rates this debt's rate history, and [arrears] where its schedule
+     *   stands, for a caller that has already asked. Both are queries, both are
+     *   needed again by [toDomain] for the very same row, and neither can move
+     *   while one list of debts is being built. Null means ask.
+     */
+    private suspend fun outstandingOf(
+        entity: LoanEntity,
+        asOf: LocalDate? = null,
+        rates: RateSchedule? = null,
+        arrears: Arrears? = null,
+    ): Money {
+        val onFile = onCurrentBasis(entity, asOf, rates, arrears)
         if (asOf == null || entity.isClosed) return onFile
         return rewound(entity, asOf, onFile)
     }
@@ -189,7 +215,12 @@ class LoanRepository @Inject constructor(
      * Right for today always, and right for a past day only where nothing has
      * rewritten the loan's stored balance since — see [outstandingOf].
      */
-    private suspend fun onCurrentBasis(entity: LoanEntity, asOf: LocalDate?): Money {
+    private suspend fun onCurrentBasis(
+        entity: LoanEntity,
+        asOf: LocalDate?,
+        rates: RateSchedule? = null,
+        knownArrears: Arrears? = null,
+    ): Money {
         val principal = Money(entity.principalMinor)
         val since = entity.startedOn
         val until = asOf?.toEpochDay() ?: Long.MAX_VALUE
@@ -201,7 +232,7 @@ class LoanRepository @Inject constructor(
             entity.kind == LoanKind.OVERDRAFT -> principal
             entity.seriesId == null -> principal
             entity.termMonths != null && entity.termMonths > 0 -> {
-                val arrears = entity.arrears(asOf)
+                val arrears = knownArrears ?: entity.arrears(asOf)
                 LoanMath.outstanding(
                     principal = principal,
                     annualRatePercent = entity.annualRate ?: 0.0,
@@ -210,7 +241,7 @@ class LoanRepository @Inject constructor(
                     emi = entity.emiMinor?.let { Money(it) },
                     style = entity.instalmentStyle,
                     monthsPerPayment = entity.paymentEveryMonths,
-                    accrual = entity.accrual(),
+                    accrual = entity.accrual(rates),
                     missed = arrears.missed,
                 )
             }
@@ -569,25 +600,37 @@ class LoanRepository @Inject constructor(
     private suspend fun LoanEntity.stepsInBs(): Boolean =
         effectiveCalendar(recurInBs) == CalendarSystem.BIKRAM_SAMBAT
 
-    private suspend fun LoanEntity.accrual(): Accrual? = accrualFor(
-        startedOn = LocalDate.ofEpochDay(startedOn),
-        firstPaymentOn = BrokenPeriod.firstInstalment(
-            disbursedOn?.let { LocalDate.ofEpochDay(it) },
-            emiStartsOn?.let { LocalDate.ofEpochDay(it) },
-            paymentEveryMonths,
-            termMonths,
-            inBikramSambat = stepsInBs(),
-        ),
-        monthsPerPayment = paymentEveryMonths,
-        carriedInterest = Money(carriedInterestMinor),
-        // Only worth carrying when the bank has actually moved it; a fixed-rate
-        // loan is described completely by the single figure beside it.
-        rates = interest.scheduleFor(annualRate, loanId = id).takeIf { !it.isFixed },
-        // The schedule's own months. Every date below is stepped through it, so
-        // the periods this charges interest over land on the very days the rule
-        // produces.
-        inBikramSambat = stepsInBs(),
-    )
+    /**
+     * @param rates this debt's rate history, where the caller has already
+     *   fetched it. A list of debts needs the same history twice for every row —
+     *   once here to date the accrual, once again to draw the row — and it is a
+     *   query each time. Null means fetch it, which is what every caller with
+     *   only one question to ask does.
+     */
+    private suspend fun LoanEntity.accrual(rates: RateSchedule? = null): Accrual? {
+        // The schedule's own months, asked once. Every date below is stepped
+        // through it, so the periods this charges interest over land on the very
+        // days the rule produces.
+        val bs = stepsInBs()
+        return accrualFor(
+            startedOn = LocalDate.ofEpochDay(startedOn),
+            firstPaymentOn = BrokenPeriod.firstInstalment(
+                disbursedOn?.let { LocalDate.ofEpochDay(it) },
+                emiStartsOn?.let { LocalDate.ofEpochDay(it) },
+                paymentEveryMonths,
+                termMonths,
+                inBikramSambat = bs,
+            ),
+            monthsPerPayment = paymentEveryMonths,
+            carriedInterest = Money(carriedInterestMinor),
+            // Only worth carrying when the bank has actually moved it; a
+            // fixed-rate loan is described completely by the single figure
+            // beside it.
+            rates = (rates ?: interest.scheduleFor(annualRate, loanId = id))
+                .takeIf { !it.isFixed },
+            inBikramSambat = bs,
+        )
+    }
 
     /**
      * The next instalment strictly after [on], on the day it has always fallen.
@@ -699,16 +742,20 @@ class LoanRepository @Inject constructor(
      * Null on anything with no schedule to show: an overdraft, a bare IOU, money
      * between people handed back in one go.
      */
-    suspend fun scheduleFor(loanId: String): LoanSchedule? {
-        val entity = loanDao.findById(loanId) ?: return null
-        val term = entity.termMonths ?: return null
-        if (term <= 0 || entity.kind == LoanKind.OVERDRAFT || entity.isClosed) return null
+    suspend fun scheduleFor(loanId: String): LoanSchedule? = withContext(io) {
+        val entity = loanDao.findById(loanId) ?: return@withContext null
+        val term = entity.termMonths ?: return@withContext null
+        if (term <= 0 || entity.kind == LoanKind.OVERDRAFT || entity.isClosed) {
+            return@withContext null
+        }
         // A debt handed back in one go has no schedule to list — money between
         // people, which is most of them, and a term loan whose payment period is
         // the whole term. A null instalment is how the app says so, and it is
         // load-bearing: computing one here would draw a table of payments nobody
         // ever agreed to make.
-        if (entity.emiMinor == null || entity.paymentEveryMonths >= term) return null
+        if (entity.emiMinor == null || entity.paymentEveryMonths >= term) {
+            return@withContext null
+        }
         val accrual = entity.accrual()
         val arrears = entity.arrears()
         val gap = entity.paymentEveryMonths.coerceAtLeast(1)
@@ -722,9 +769,9 @@ class LoanRepository @Inject constructor(
             accrual = accrual,
             missed = arrears.missed,
         )
-        if (rows.isEmpty()) return null
+        if (rows.isEmpty()) return@withContext null
         val stepsInBs = entity.stepsInBs()
-        return LoanSchedule(
+        LoanSchedule(
             name = entity.name,
             kind = entity.kind,
             currencyCode = entity.currencyCode,
@@ -855,8 +902,8 @@ class LoanRepository @Inject constructor(
      * balance is the loan's own outstanding figure, and reading them from two
      * different moments would let the bottom of the table contradict the top.
      */
-    suspend fun history(loanId: String): LoanHistory? {
-        val entity = loanDao.findById(loanId) ?: return null
+    suspend fun history(loanId: String): LoanHistory? = withContext(io) {
+        val entity = loanDao.findById(loanId) ?: return@withContext null
         val loan = entity.toDomain(outstandingOf(entity))
         val facts = loanDao.movements(loanId, entity.seriesId).map { row ->
             LoanEntryFact(
@@ -879,7 +926,7 @@ class LoanRepository @Inject constructor(
                 note = row.entry.note,
             )
         }
-        return LoanHistory(
+        LoanHistory(
             loan = loan,
             movements = LoanLedger.of(
                 loan = loan,
@@ -975,6 +1022,25 @@ class LoanRepository @Inject constructor(
      *   past-month row prints it, and a balance walked back out of dated
      *   movements is a different question from this one.
      */
+    /**
+     * **Nothing here runs on the thread that draws.** Working out one debt is a
+     * dozen queries and an amortisation walked payment by payment, and this ran
+     * on the caller's context — which for a view model is the main thread, so
+     * every debt on the screen was a dozen hops through the main looper and the
+     * arithmetic between them landed on it too. The list is built on [io] and
+     * arrives as a finished list.
+     *
+     * **Bursts collapse rather than queue.** The revisions above fire on every
+     * write, and the app writes in runs — a launch that materialises due
+     * instalments, folds in payments and backfills disbursements is dozens of
+     * them in a row. Conflated, the intermediate lists nobody would have seen
+     * are dropped instead of each being built in full; the last one always
+     * survives, which is the one that is true.
+     *
+     * **And an unchanged list is not re-emitted.** An entry revision fires for
+     * any money at all, including an expense no debt has ever heard of, and
+     * re-emitting an identical list of debts re-runs every screen built on one.
+     */
     fun observeLoansWithBalance(asOf: LocalDate? = null): Flow<List<Loan>> =
         combine(
             loanDao.observeAll(),
@@ -983,9 +1049,27 @@ class LoanRepository @Inject constructor(
             // bought, so the debts have to be worked out again.
             interest.observeRateRevision(),
         ) { rows, _, _ -> rows }
+            .conflate()
             .map { rows ->
-                rows.map { entity -> entity.toDomain(outstandingOf(entity, asOf), asOf) }
+                // The display currency is one setting over the whole list, and
+                // the rate history and the schedule's standing are one answer
+                // each per debt — asked once here rather than twice inside the
+                // two calls below, which is a query saved on every row.
+                val baseCode = settings.settings.first().currencyCode
+                rows.map { entity ->
+                    val rates = interest.scheduleFor(entity.annualRate, loanId = entity.id)
+                    val arrears = entity.arrears(asOf)
+                    entity.toDomain(
+                        outstanding = outstandingOf(entity, asOf, rates, arrears),
+                        asOf = asOf,
+                        knownRates = rates,
+                        knownArrears = arrears,
+                        knownBaseCode = baseCode,
+                    )
+                }
             }
+            .distinctUntilChanged()
+            .flowOn(io)
 
     /**
      * Creates a loan and schedules its instalment as an ordinary repeating
@@ -2626,7 +2710,21 @@ class LoanRepository @Inject constructor(
      *   every payment made since would answer with today's figure the moment
      *   anything projected it forward.
      */
-    private suspend fun LoanEntity.toDomain(outstanding: Money, asOf: LocalDate? = null): Loan {
+    /**
+     * @param knownRates the rate history and [knownArrears] where the schedule
+     *   stands, where whoever worked out [outstanding] has already asked for
+     *   them. They are the same two answers, about the same debt, a few lines
+     *   apart — see [outstandingOf]. Null means ask again.
+     * @param knownBaseCode the currency totals are read in. One setting shared by
+     *   every row, so a list asks for it once rather than once a row.
+     */
+    private suspend fun LoanEntity.toDomain(
+        outstanding: Money,
+        asOf: LocalDate? = null,
+        knownRates: RateSchedule? = null,
+        knownArrears: Arrears? = null,
+        knownBaseCode: String? = null,
+    ): Loan {
         val until = asOf?.toEpochDay() ?: Long.MAX_VALUE
         // Converted whenever the two currencies differ, whatever the loan asks
         // to be *read* in.
@@ -2638,12 +2736,12 @@ class LoanRepository @Inject constructor(
         // Tied together, a rupee debt under a dollar display had no converted
         // figure at all, so "to pay" fell back to its own and added रू 10,50,000
         // into a total wearing a dollar sign.
-        val baseCode = settings.settings.first().currencyCode
+        val baseCode = knownBaseCode ?: settings.settings.first().currencyCode
         val converts = !currencyCode.equals(baseCode, ignoreCase = true)
         // Asked once: both the figure shown and the meter below need it.
         val interestServiced = Money(loanDao.interestPaidOutright(id))
         // And once for the rate history, which three answers below depend on.
-        val rates = interest.scheduleFor(annualRate, loanId = id)
+        val rates = knownRates ?: interest.scheduleFor(annualRate, loanId = id)
         // The dated steps this balance took, fetched once for the two answers
         // that walk them: what the debt started at, and what it has cost.
         val meters = metersInterest(rates)
@@ -2656,7 +2754,7 @@ class LoanRepository @Inject constructor(
         // Where the schedule stands and what it is owed — one answer, because
         // the count of periods behind us and the set of them that went unpaid
         // are only ever right together.
-        val arrears = arrears(asOf)
+        val arrears = knownArrears ?: arrears(asOf)
         return Loan(
             id = id,
             name = name,

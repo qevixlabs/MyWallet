@@ -31,9 +31,14 @@ import com.mywallet.domain.MoneyEntry
 import com.mywallet.domain.PeriodSummary
 import com.mywallet.domain.Shortlist
 import com.mywallet.domain.payableHoldings
+import com.mywallet.di.IoDispatcher
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 import java.util.UUID
@@ -141,6 +146,7 @@ class WalletRepository @Inject constructor(
     private val interest: InterestRepository,
     private val settings: SettingsStore,
     private val clock: Clock,
+    @IoDispatcher private val io: CoroutineDispatcher,
 ) {
 
 
@@ -416,7 +422,7 @@ class WalletRepository @Inject constructor(
             settings.settings,
         ) { accounts, balances, appSettings ->
             Triple(accounts, balances, appSettings.currencyCode)
-        }.map { (accounts, balances, baseCode) ->
+        }.conflate().map { (accounts, balances, baseCode) ->
             val byId = balances.associateBy { it.accountId }
             accounts.map { account ->
                 val domain = account.toDomain()
@@ -446,7 +452,11 @@ class WalletRepository @Inject constructor(
                 }
                 AccountWithBalance(domain, Money(raw), inBase)
             }
-        }
+            // Converting a foreign balance is a lookup apiece and the rows are
+            // rebuilt on every movement anywhere, so this is off the drawing
+            // thread for the same reason the debts are — see
+            // [LoanRepository.observeLoansWithBalance].
+        }.distinctUntilChanged().flowOn(io)
 
     suspend fun findAccount(id: String): Account? = accountDao.findById(id)?.toDomain()
 
