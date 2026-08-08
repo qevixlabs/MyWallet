@@ -139,21 +139,37 @@ object InterstitialAds {
      */
     private fun startSdk(app: Context) {
         if (!started.compareAndSet(false, true)) return
-        // Before the SDK starts, never after: the configuration decides what
-        // the *first* request is answered with, and a phone told about it
-        // afterwards has already had one real ad served to it. See
-        // [AdConfig.TEST_DEVICES] for why this ships rather than being
-        // stripped out.
-        MobileAds.setRequestConfiguration(
-            RequestConfiguration.Builder()
-                .setTestDeviceIds(AdConfig.TEST_DEVICES)
-                .build()
-        )
-        MobileAds.initialize(app) {
-            ready = true
-            // Only now is there anything to load through — see [ready].
-            fetch(app)
-        }
+        // **Off the main thread, which is Google's own instruction and shows up
+        // as a stutter when ignored.** `MobileAds.initialize` returns quickly
+        // but does real work before it does — reading its own storage and
+        // bringing up a Play Services module — and it is reached from a consent
+        // callback, which arrives on the main thread. On a phone that has never
+        // served an ad that is the worst possible moment: the user has just come
+        // back to the app and the frame they are looking at is the one it lands
+        // in.
+        //
+        // A bare thread rather than a coroutine because this object is process
+        // scoped and owns no scope. It runs once per process and then never
+        // again — [started] sees to that.
+        Thread({
+            // Before the SDK starts, never after: the configuration decides what
+            // the *first* request is answered with, and a phone told about it
+            // afterwards has already had one real ad served to it. See
+            // [AdConfig.TEST_DEVICES] for why this ships rather than being
+            // stripped out.
+            MobileAds.setRequestConfiguration(
+                RequestConfiguration.Builder()
+                    .setTestDeviceIds(AdConfig.TEST_DEVICES)
+                    .build()
+            )
+            MobileAds.initialize(app) {
+                ready = true
+                // Only now is there anything to load through — see [ready]. The
+                // callback arrives on the main thread and `load` must be called
+                // from it, so nothing here is moved off.
+                fetch(app)
+            }
+        }, "admob-init").start()
     }
 
     private fun fetch(app: Context) {

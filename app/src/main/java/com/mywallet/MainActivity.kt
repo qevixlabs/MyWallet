@@ -50,6 +50,8 @@ import com.mywallet.ui.theme.MyWalletTheme
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import com.mywallet.di.IoDispatcher
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -83,6 +85,7 @@ class AppViewModel @Inject constructor(
     private val recurrence: RecurrenceRepository,
     private val interest: InterestRepository,
     private val months: MonthSelection,
+    @IoDispatcher private val io: CoroutineDispatcher,
 ) : ViewModel() {
 
     val settings: StateFlow<AppSettings> = settingsStore.settings
@@ -355,7 +358,17 @@ class AppViewModel @Inject constructor(
                 }
             }
         }
-        viewModelScope.launch {
+        // **On [io], and this is the sweep that most needed it.** Everything
+        // below is the catching-up a launch owes — occurrences whose day has
+        // arrived, debts put back in step with the calendar, interest for the
+        // quarters that closed — and it ran on `viewModelScope`, which is the
+        // main thread, at the exact moment the first screen was trying to draw.
+        // Measured on a real phone it showed as 14% janky frames with a 99th
+        // percentile of 200ms and the GPU idle at 4–7ms: work on the thread that
+        // draws, not drawing that was too slow. None of it touches a view; the
+        // two things it writes are `StateFlow` values, which are safe from any
+        // thread.
+        viewModelScope.launch(io) {
             // Asked before anything else writes: a phone with figures on it is
             // not shown the opening questions however `setup_done` stands.
             usedBefore.value = wallet.hasHistory()
@@ -405,7 +418,8 @@ class AppViewModel @Inject constructor(
             interest.adoptStoredPayoutInterval()
             interest.postDueInterest()
         }
-        viewModelScope.launch {
+        // Scheduling work is disk and IPC, and it is owed to nothing on screen.
+        viewModelScope.launch(io) {
             // WorkManager keeps its own schedule, but re-applying on launch means
             // a reinstall or a cleared job store cannot silently stop backups.
             val current = settingsStore.settings.first()

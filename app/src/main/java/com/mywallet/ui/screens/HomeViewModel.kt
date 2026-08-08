@@ -13,11 +13,14 @@ import com.mywallet.domain.HoldingBreakdown
 import com.mywallet.domain.MoneyEntry
 import com.mywallet.domain.PeriodSummary
 import dagger.hilt.android.lifecycle.HiltViewModel
+import com.mywallet.di.IoDispatcher
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
@@ -87,6 +90,7 @@ class HomeViewModel @Inject constructor(
     private val settingsStore: SettingsStore,
     private val months: MonthSelection,
     private val clock: Clock,
+    @IoDispatcher private val io: CoroutineDispatcher,
 ) : ViewModel() {
 
     /**
@@ -129,7 +133,11 @@ class HomeViewModel @Inject constructor(
             ) { summary, breakdown, entries ->
                 buildState(display, window, summary, breakdown, entries)
             }
-        }.stateIn(
+            // [buildState] walks every movement of the month twice — once into
+            // the two daily arrays the curve is drawn from, once into the list —
+            // and it ran on the thread that draws, on the tab the app opens on.
+            // Off it, like the debts and the balances beside it.
+        }.flowOn(io).stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = HomeUiState(),
