@@ -40,6 +40,7 @@ import com.mywallet.core.money.CurrencyOption
 import com.mywallet.core.money.Money
 import com.mywallet.core.money.MoneyFormatter
 import com.mywallet.data.db.entity.Direction
+import com.mywallet.data.db.entity.LoanKind
 import com.mywallet.domain.HoldingBreakdown
 import com.mywallet.domain.MoneyEntry
 import com.mywallet.ui.LocalDateDisplay
@@ -66,6 +67,7 @@ import com.mywallet.ui.entryTitle
 import com.mywallet.ui.holdingDisplayName
 import com.mywallet.ui.loanMovementLabel
 import com.mywallet.ui.loanRowLabel
+import com.mywallet.ui.personWithCurrency
 import com.mywallet.ui.overdraftRoute
 import com.mywallet.ui.theme.RowTitleStyle
 import com.mywallet.ui.theme.DayTotalStyle
@@ -586,6 +588,9 @@ fun EntryRow(
             // payment did to a debt. All of it competed with the date for one
             // line and lost — the bank's name was the first thing trimmed, and
             // it is the thing that tells two rows of the same amount apart.
+            // Money with a person is the one holding whose row carries its
+            // currency inline — see [personWithCurrency].
+            val isPersonDebt = entry.loanKind == LoanKind.PERSONAL
             val details = when {
                 // The card it was bought on, and nothing else. The title is
                 // already what the purchase was — "Groceries" — so the line
@@ -616,10 +621,12 @@ fun EntryRow(
                     // long. Withheld too where the row gives the currency a line
                     // of its own, which is [showCurrency]'s whole purpose.
                     loanRowLabel(entry.loanName, entry.loanKind, account)?.let {
-                        if (showCurrency || account != null) {
-                            it
-                        } else {
-                            "$it (${entry.currencyCode})"
+                        when {
+                            // Money with a person reads "Sita - NPR" wherever it
+                            // is drawn — see [personWithCurrency].
+                            isPersonDebt -> personWithCurrency(it, entry.currencyCode)
+                            showCurrency || account != null -> it
+                            else -> "$it (${entry.currencyCode})"
                         }
                     },
                     account,
@@ -627,7 +634,9 @@ fun EntryRow(
                 entry.isLoanPayment -> listOfNotNull(
                     stringResource(R.string.loan_movement_instalment).takeIf { ownNote != null },
                     account,
-                    loanRowLabel(entry.loanName, entry.loanKind, account),
+                    loanRowLabel(entry.loanName, entry.loanKind, account)?.let {
+                        if (isPersonDebt) personWithCurrency(it, entry.currencyCode) else it
+                    },
                 )
                 else -> listOfNotNull(
                     // Named or not, both ends are worth saying once.
@@ -653,7 +662,10 @@ fun EntryRow(
             // wrong on one whose rows lead with a mark and whose second line is
             // already the longest thing on them. Underneath, it is the same
             // fact read in the same order, and the name is left whole.
-            if (showCurrency) {
+            // Not where the line above already ends in it: a person's row
+            // carries its currency inline, and a second copy underneath is the
+            // same three letters twice.
+            if (showCurrency && !isPersonDebt) {
                 val code = entry.accountCurrency ?: entry.currencyCode
                 Text(
                     text = code,

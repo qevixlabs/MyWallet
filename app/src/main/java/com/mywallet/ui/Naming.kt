@@ -160,6 +160,25 @@ fun loanRowLabel(loanName: String?, loanKind: LoanKind?, accountLabel: String?):
 }
 
 /**
+ * A person's name with the currency the debt is held in: **"Sita - NPR"**.
+ *
+ * One shape, in all three lists that draw movements — Home, the Timeline and
+ * Reminders — and for money with a person only. Everywhere else a holding is
+ * an account, whose own name already carries a bank and a kind and whose
+ * currency reads properly in brackets after it; a person has neither, so the
+ * name and the currency are the whole of the line and a dash joins them more
+ * plainly than brackets do.
+ *
+ * It also settles a disagreement between the three pages. Reminders drew the
+ * currency on a **third line** of its own — right for a row whose name may be
+ * long, and odd under a line that is only somebody's first name — while Home
+ * and the Timeline put it in brackets. Now all three say the same thing the
+ * same way, and the page that had a third line no longer draws one for these.
+ */
+fun personWithCurrency(name: String, currencyCode: String): String =
+    "$name - ${currencyCode.uppercase()}"
+
+/**
  * "Wise → Nabil Bank", or null when this is not a transfer at all.
  *
  * Both halves of a transfer produce the same string, so the pair reads as one

@@ -54,6 +54,7 @@ import com.mywallet.R
 import com.mywallet.core.money.CurrencyOption
 import com.mywallet.core.money.MoneyFormatter
 import com.mywallet.data.db.entity.Direction
+import com.mywallet.data.db.entity.LoanKind
 import com.mywallet.domain.ProjectedDay
 import com.mywallet.domain.ProjectedEntry
 import com.mywallet.ui.LocalDateDisplay
@@ -88,6 +89,7 @@ import com.mywallet.ui.holdingDisplayName
 import com.mywallet.ui.kindLabelRes
 import com.mywallet.ui.labelRes
 import com.mywallet.ui.loanRowLabel
+import com.mywallet.ui.personWithCurrency
 import com.mywallet.ui.outstandingShown
 import com.mywallet.ui.shownAfter
 import com.mywallet.ui.theme.RowTitleStyle
@@ -1050,6 +1052,7 @@ fun ProjectedEntryRow(
     val route = projected.transferRoute()
     val accountLabel = projected.accountLabel(withCurrency = !showCurrency)
     val loanLabel = projected.loanLabel(accountLabel)
+    val isPersonDebt = projected.loanKind == LoanKind.PERSONAL
     // An instalment's note defaults to the loan's own name, which the
     // subtext underneath now carries. Leading with it said the bank's
     // name twice and never said the row was an instalment; a note the
@@ -1077,8 +1080,11 @@ fun ProjectedEntryRow(
         route.takeIf { it != title },
         accountLabel.takeIf { route == null },
         // Where it lands: the debt this settles. Named only when the
-        // account it leaves has not already named it.
-        loanLabel,
+        // account it leaves has not already named it. Money with a person
+        // takes its currency inline — see [personWithCurrency].
+        loanLabel?.let {
+            if (isPersonDebt) personWithCurrency(it, projected.currencyCode) else it
+        },
     ).distinct().joinToString(" · ")
 
     Row(
@@ -1119,7 +1125,8 @@ fun ProjectedEntryRow(
             }
             // The currency underneath, where the name above has been left
             // whole — see [showCurrency].
-            if (showCurrency) {
+            // Not on a person's row, whose line above already ends in it.
+            if (showCurrency && !isPersonDebt) {
                 Text(
                     text = projected.accountCurrency ?: projected.currencyCode,
                     style = MaterialTheme.typography.bodySmall,
